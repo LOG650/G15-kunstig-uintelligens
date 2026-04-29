@@ -2,7 +2,7 @@
 
 Status og overlevering for prediksjon av eksportpris fersk norsk laks.
 
-**Sist oppdatert:** 2026-04-29
+**Sist oppdatert:** 2026-04-29 (Spor B)
 
 ## Filer i denne mappa
 
@@ -57,16 +57,20 @@ Datasettet leses fra `../004 data/Analyseklart datasett/laks_ukentlig_features.c
 
 ## Resultater per 2026-04-29
 
-| Horisont | Naiv MAE | Naiv MAPE | SARIMA MAE | SARIMA MAPE | XGBoost MAE | XGBoost MAPE |
-|---:|---:|---:|---:|---:|---:|---:|
-| 4 | **8.51** | **9.8 %** | 22.19 | 27.9 % | 11.46 | 13.7 % |
-| 8 | **13.04** | **15.4 %** | 22.19 | 27.9 % | 12.59 | 15.1 % |
-| 12 | 16.35 | 19.7 % | 22.19 | 27.9 % | **14.79** | **18.1 %** |
+| Horisont | Naiv MAE | Naiv MAPE | SARIMA MAE | SARIMA MAPE | XGBoost (baseline) MAE | XGBoost (tunet) MAE | XGBoost (tunet) MAPE | LightGBM (tunet) MAE | LightGBM (tunet) MAPE |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 4 | **8.51** | **9.8 %** | 22.19 | 27.9 % | 11.46 | 10.37 | 12.2 % | 10.45 | 12.3 % |
+| 8 | **13.04** | **15.4 %** | 22.19 | 27.9 % | 12.59 | 11.98 | 14.3 % | **10.90** | **12.9 %** |
+| 12 | 16.35 | 19.7 % | 22.19 | 27.9 % | 14.79 | 15.47 | 19.0 % | **13.06** | **16.0 %** |
+
+XGBoost tunet: `RandomizedSearchCV` + `TimeSeriesSplit(n_splits=5)`, 60 iterasjonar, MAE-scoring, FAO-kolonner ekskludert (uten_fao vann marginalt). LightGBM: same protokoll.
 
 **Tolkning:**
-- Naiv slår XGBoost på 4 og 8 uker → feature-settet tilfører foreløpig lite utover lag-prisen.
-- XGBoost vinner først på 12 uker, hvor "i dag = om 12 uker" blir for grovt for naiv.
-- SARIMA gir samme tall på tvers av horisonter – se kjent problem nedenfor.
+
+- LightGBM slår naiv på h=8 (10.90 vs 13.04) og h=12 (13.06 vs 16.35) – stor forbetring.
+- h=4 er vanskelegast: naiv (8.51) held framleis, truleg fordi pris-laga dominerer over korte horisontar.
+- XGBoost tunet h=12 (15.47) er svakare enn baseline (14.79) – CV-optimaliseringa generaliserer betre via LightGBM for lange horisontar.
+- SARIMA gir same tall på tvers av horisontar – sjå kjent problem nedanfor.
 
 ## Kjente problemer (må fikses før videre modellering)
 
@@ -86,10 +90,9 @@ Datasettet leses fra `../004 data/Analyseklart datasett/laks_ukentlig_features.c
 1. **Fiks SARIMA-evalueringen** med rullende opphav. Dette er forutsetningen for
    at sammenligningen mot XGBoost skal være meningsfull.
 2. ~~**Bestem FAO-håndtering**~~ **Ferdig (Spor C, 2026-04-29)** – FAO-kolonnene er forward-filla for 2023–2026; `fao_imputert`-flagg skiller observerte fra interpolerte rader. XGBoost kan no bruke FAO-features utan å droppe dei.
-3. **Hyperparameter-tuning XGBoost** (`RandomizedSearchCV` + `TimeSeriesSplit`)
-   – nåværende parametre er ubevisst valgt.
+3. ~~**Hyperparameter-tuning XGBoost** (`RandomizedSearchCV` + `TimeSeriesSplit`)~~ **Ferdig (Spor B, 2026-04-29)** – tunet XGBoost og LightGBM, resultat i `resultater/xgboost_tunet.csv` og `lgbm_tunet.csv`.
 4. **SARIMAX med valuta som eksogen regressor** (`eur_nok_snitt`, `usd_nok_snitt`).
-5. **LightGBM** som alternativ ML-modell (nevnt i prosjektplanen).
+5. ~~**LightGBM** som alternativ ML-modell (nevnt i prosjektplanen).~~ **Ferdig (Spor B, 2026-04-29)** – LightGBM slår naiv på h=8 og h=12.
 6. **Konfidensintervaller** for SARIMA-prognoser i sluttrapport.
 7. ~~**Ekstra feature engineering**: differanser, EUR/USD-ratio, akkumulert volum.~~ **Ferdig (Spor C, 2026-04-29)** – 12 nye kolonner tilgjengelig i `laks_ukentlig_features.csv` (se datamappa LES_MEG).
 

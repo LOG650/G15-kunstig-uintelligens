@@ -1,0 +1,4 @@
+horisont,n,MAE,MAPE,beste_params
+4,100,10.368662806701659,0.12208426031352042,"{""subsample"": 0.7, ""reg_lambda"": 1.0, ""reg_alpha"": 0, ""n_estimators"": 800, ""max_depth"": 3, ""learning_rate"": 0.2, ""colsample_bytree"": 0.7}"
+8,96,11.976329615910847,0.14302976161866962,"{""subsample"": 0.9, ""reg_lambda"": 5.0, ""reg_alpha"": 0.1, ""n_estimators"": 1000, ""max_depth"": 3, ""learning_rate"": 0.2, ""colsample_bytree"": 0.6}"
+12,92,15.469292413462766,0.18956273459732403,"{""subsample"": 1.0, ""reg_lambda"": 0.5, ""reg_alpha"": 0.01, ""n_estimators"": 600, ""max_depth"": 3, ""learning_rate"": 0.05, ""colsample_bytree"": 1.0}"
