@@ -91,7 +91,7 @@ Datasettet leses fra `../004 data/Analyseklart datasett/laks_ukentlig_features.c
 4. **SARIMAX med valuta som eksogen regressor** (`eur_nok_snitt`, `usd_nok_snitt`).
 5. **LightGBM** som alternativ ML-modell (nevnt i prosjektplanen).
 6. **Konfidensintervaller** for SARIMA-prognoser i sluttrapport.
-7. **Ekstra feature engineering**: differanser, EUR/USD-ratio, akkumulert volum.
+7. ~~**Ekstra feature engineering**: differanser, EUR/USD-ratio, akkumulert volum.~~ **Ferdig (Spor C, 2026-04-29)** – 12 nye kolonner tilgjengelig i `laks_ukentlig_features.csv` (se datamappa LES_MEG).
 
 ## Tilstand i notebooken
 

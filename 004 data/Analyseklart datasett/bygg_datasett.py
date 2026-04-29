@@ -111,6 +111,37 @@ def legg_til_features(df: pd.DataFrame) -> pd.DataFrame:
     radian = out["iso_uke"] / 52 * 2 * math.pi
     out["uke_sin"] = radian.apply(math.sin)
     out["uke_cos"] = radian.apply(math.cos)
+
+    # --- Spor C: nye features (alle lag-1-basert for å unngå leakage) ---
+
+    # 1. Volum-differanser: shift(1) gir volum[t-1] ved tidspunkt t;
+    #    pct_change(k) beregnar endringa over k periodar tilbake frå t-1.
+    volum_s1 = out["eksport_volum_tonn"].shift(1)
+    out["volum_endring_1u"] = volum_s1.pct_change(1)    # (volum[t-1]-volum[t-2])/volum[t-2]
+    out["volum_endring_4u"] = volum_s1.pct_change(4)    # (volum[t-1]-volum[t-5])/volum[t-5]
+    out["volum_endring_52u"] = volum_s1.pct_change(52)  # (volum[t-1]-volum[t-53])/volum[t-53]
+
+    # 2. EUR/USD-ratio: spotverdi kjent ved t (ikkje framtidsdata),
+    #    analogt med eksisterande eur_endring_4u / usd_endring_4u.
+    out["eur_usd_ratio"] = out["eur_nok_snitt"] / out["usd_nok_snitt"]
+
+    # 3. Akkumulert volum: shift(1) + rolling sum → sum av volum[t-k..t-1]
+    out["volum_sum_4u"] = volum_s1.rolling(4).sum()
+    out["volum_sum_12u"] = volum_s1.rolling(12).sum()
+    out["volum_sum_52u"] = volum_s1.rolling(52).sum()
+
+    # 4. Glidende snitt volum: lag-1-basert, analogt med pris_ma_*
+    out["volum_ma_4"] = volum_s1.rolling(4).mean()
+    out["volum_ma_12"] = volum_s1.rolling(12).mean()
+
+    # 5. Prisvolatilitet: shift(1) + rolling std → std av pris[t-k..t-1]
+    pris_s1 = out["eksport_pris_nok_kg"].shift(1)
+    out["pris_std_4"] = pris_s1.rolling(4).std()
+    out["pris_std_12"] = pris_s1.rolling(12).std()
+
+    # 6. Spot vs. langsiktig trend: begge inngangsverdiar er lag-1-baserte
+    out["pris_vs_ma_12"] = out["pris_lag_1"] / out["pris_ma_12"]
+
     return out
 
 
@@ -130,6 +161,29 @@ def main() -> None:
                     "fao_global_atlantisk_tonn"]].isna().sum()
     print("\nManglende verdier i basis (etter merge):")
     print(mangler.to_string())
+
+    # Leakage-verifisering: ved indeks i skal feature berre bruke data t.o.m. i-1
+    i = 60  # etter warm-up-perioden (>52 rader)
+    pris = features["eksport_pris_nok_kg"]
+    volum = features["eksport_volum_tonn"]
+
+    exp_vendring = (volum.iloc[i - 1] - volum.iloc[i - 2]) / volum.iloc[i - 2]
+    assert abs(features["volum_endring_1u"].iloc[i] - exp_vendring) < 1e-9, \
+        "Leakage: volum_endring_1u bruker data etter t-1"
+
+    assert abs(features["volum_sum_4u"].iloc[i] - volum.iloc[i - 4:i].sum()) < 1e-9, \
+        "Leakage: volum_sum_4u bruker data etter t-1"
+
+    assert abs(features["volum_ma_4"].iloc[i] - volum.iloc[i - 4:i].mean()) < 1e-9, \
+        "Leakage: volum_ma_4 bruker data etter t-1"
+
+    assert abs(features["pris_std_4"].iloc[i] - pris.iloc[i - 4:i].std(ddof=1)) < 1e-9, \
+        "Leakage: pris_std_4 bruker data etter t-1"
+
+    assert abs(features["pris_std_12"].iloc[i] - pris.iloc[i - 12:i].std(ddof=1)) < 1e-9, \
+        "Leakage: pris_std_12 bruker data etter t-1"
+
+    print("\nLeakage-assert OK – alle nye features bruker berre t-1 og tidlegare.")
 
 
 if __name__ == "__main__":
