@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python bygg_datasett.py)"
+      "Bash(python bygg_datasett.py)",
+      "Bash(python -c \"import statsmodels, xgboost, sklearn, matplotlib, nbformat; print\\('statsmodels', statsmodels.__version__\\); print\\('xgboost', xgboost.__version__\\); print\\('sklearn', sklearn.__version__\\); print\\('matplotlib', matplotlib.__version__\\); print\\('nbformat', nbformat.__version__\\)\")",
+      "Bash(python -m pip install --quiet statsmodels xgboost scikit-learn matplotlib nbformat)",
+      "Bash(python -c \"import statsmodels, xgboost, sklearn, matplotlib, nbformat; print\\('OK'\\)\")",
+      "Bash(python _bygg_notebook.py)",
+      "Bash(python -c \"import nbconvert\")",
+      "Bash(python -m pip install --quiet nbconvert jupyter)"
     ]
   }
 }
