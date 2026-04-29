@@ -85,7 +85,7 @@ Datasettet leses fra `../004 data/Analyseklart datasett/laks_ukentlig_features.c
 
 1. **Fiks SARIMA-evalueringen** med rullende opphav. Dette er forutsetningen for
    at sammenligningen mot XGBoost skal være meningsfull.
-2. **Bestem FAO-håndtering** og kjør XGBoost på nytt med fao-features inkludert.
+2. ~~**Bestem FAO-håndtering**~~ **Ferdig (Spor C, 2026-04-29)** – FAO-kolonnene er forward-filla for 2023–2026; `fao_imputert`-flagg skiller observerte fra interpolerte rader. XGBoost kan no bruke FAO-features utan å droppe dei.
 3. **Hyperparameter-tuning XGBoost** (`RandomizedSearchCV` + `TimeSeriesSplit`)
    – nåværende parametre er ubevisst valgt.
 4. **SARIMAX med valuta som eksogen regressor** (`eur_nok_snitt`, `usd_nok_snitt`).

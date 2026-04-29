@@ -47,6 +47,7 @@ Sammenslått tidsserie for prediksjon av eksportpris på fersk norsk laks.
 - **Glidende snitt volum (Spor C, 2026-04-29):** `volum_ma_4`, `volum_ma_12` (lag-1-basert)
 - **Prisvolatilitet (Spor C, 2026-04-29):** `pris_std_4`, `pris_std_12` (lag-1-basert rullende std)
 - **Spot vs. trend (Spor C, 2026-04-29):** `pris_vs_ma_12 = pris_lag_1 / pris_ma_12`
+- **FAO-imputation (Spor C, 2026-04-29):** `fao_imputert` – binært flagg (1 = forward-fill frå 2022-verdi, 0 = observert). FAO-kolonnene er no NaN-frie for heile perioden.
 
 ## Kjente begrensninger
 

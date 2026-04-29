@@ -85,7 +85,14 @@ def bygg_basisdatasett() -> pd.DataFrame:
     df = ssb.merge(eur, on=["iso_aar", "iso_uke"], how="left")
     df = df.merge(usd, on=["iso_aar", "iso_uke"], how="left")
     df = df.merge(fao, on="iso_aar", how="left")
-    return df.sort_values("uke_start").reset_index(drop=True)
+    df = df.sort_values("uke_start").reset_index(drop=True)
+
+    # FAO-data sluttar i 2022; forward-fill siste kjente verdi for 2023+.
+    # fao_imputert = 1 markerer radene der verdiane er fylt inn (ikkje observert).
+    fao_cols = ["fao_global_atlantisk_tonn", "fao_norge_tonn", "fao_eks_norge_tonn"]
+    df["fao_imputert"] = df["fao_global_atlantisk_tonn"].isna().astype(int)
+    df[fao_cols] = df[fao_cols].ffill()
+    return df
 
 
 def legg_til_features(df: pd.DataFrame) -> pd.DataFrame:
