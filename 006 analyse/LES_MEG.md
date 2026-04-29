@@ -2,7 +2,7 @@
 
 Status og overlevering for prediksjon av eksportpris fersk norsk laks.
 
-**Sist oppdatert:** 2026-04-29 (Spor A, B og C ferdig – samlet etter merge)
+**Sist oppdatert:** 2026-04-29 (Fase 1 ferdig – Fase 2 oppstartet med Spor D, E, F, G)
 
 ## Filer i denne mappa
 
@@ -29,18 +29,32 @@ Status og overlevering for prediksjon av eksportpris fersk norsk laks.
 | `resultater/ml_mae_samanlikning.png`, `ml_ensemble_prediksjon.png` | Plot fra Spor B |
 | `resultater/residualplot_{tid,scatter,hist}.png` | Residualanalyse av ensemble per horisont |
 
-## Parallell arbeidsfordeling – alle spor ferdig
+## Parallell arbeidsfordeling
+
+### Fase 1 – baseline og første resultater (ferdig)
 
 | Spor | Tema | Prompt | Status |
 |---|---|---|---|
-| **A** | SARIMA / SARIMAX / KI / residualdiagnostikk | [`oppgaver/spor_a_sarima.md`](oppgaver/spor_a_sarima.md) | ✅ Ferdig |
+| **A** | SARIMA / SARIMAX / residualdiagnostikk | [`oppgaver/spor_a_sarima.md`](oppgaver/spor_a_sarima.md) | ✅ Ferdig |
 | **B** | XGBoost / LightGBM / tuning / ensemble | [`oppgaver/spor_b_ml.md`](oppgaver/spor_b_ml.md) | ✅ Ferdig |
 | **C** | Feature engineering + FAO-imputation | [`oppgaver/spor_c_features.md`](oppgaver/spor_c_features.md) | ✅ Ferdig |
 
+### Fase 2 – rapport og forbedringer (pågående)
+
+| Spor | Tema | Eier filer | Prompt |
+|---|---|---|---|
+| **D** | Rapport-skriving og rapport-figurer | `014 fase 4 - report/rapport_kapitler/`, `resultater/rapport_*` | [`oppgaver/spor_d_rapport.md`](oppgaver/spor_d_rapport.md) |
+| **E** | Auto-ARIMA + refit-sensitivitet for SARIMA | `006 analyse/sarima_avansert.py`, `resultater/sarima_avansert_*` | [`oppgaver/spor_e_sarima_avansert.md`](oppgaver/spor_e_sarima_avansert.md) |
+| **F** | Bias-korreksjon + ensemble-vekting + SHAP | `006 analyse/ml_avansert.py`, `resultater/ml_avansert_*` | [`oppgaver/spor_f_ml_avansert.md`](oppgaver/spor_f_ml_avansert.md) |
+| **G** | Empirisk kalibrerte CI (bootstrap + quantile reg.) | `006 analyse/usikkerhet_eksperiment.py`, `resultater/usikkerhet_*` | [`oppgaver/spor_g_usikkerhet.md`](oppgaver/spor_g_usikkerhet.md) |
+
 Konfliktregler (hold ved videre arbeid):
-- `baseline_modeller.ipynb` og `eksporter_baseline.py` er FROSSET. Ingen endrer disse.
+- **Alle Fase 1-skript er frosset** (`sarima_eksperiment.py`, `ml_eksperiment.py`, `ml_ensemble.py`, `ml_residualplot.py`). Spor E/F/G leser fra dem, men oppretter egne `*_avansert.py` / `usikkerhet_*.py`.
+- `baseline_modeller.ipynb` og `eksporter_baseline.py` er FROSSET.
 - Spor C kan kun **legge til** kolonner i features-CSV, aldri rename eller slette.
 - Alle skriver resultater til `resultater/<eget-prefix>_*.csv`. Aldri overskriv andres filer.
+- **Spor D leser fra alt og skriver rapport-tekst i `014 fase 4 - report/rapport_kapitler/`** – berører ikke modellkode.
+- LES_MEG (denne fila) oppdateres av alle, men i ulike seksjoner. Tabellen og listene er additive.
 
 ## Reproduksjon
 
@@ -147,14 +161,15 @@ CI-ene er **systematisk for smale** (~80 % faktisk dekning vs. 95 % nominell). D
 7. ~~Ekstra feature engineering~~ ✅ Spor C (12 nye kolonner)
 8. ~~Full retren med Spor C-features + ensemble~~ ✅ Spor B
 
-**Gjenstående (nice-to-have / rapportering):**
+**Gjenstående (Fase 2-spor – pågående):**
 
-a. **Rapport-skriving** – tabeller, plot og diskusjon av modellbegrensningene (CI-underdekning, bias, sesongautokorrelasjon).
-b. **Auto-ARIMA** (`pmdarima`) for å verifisere at (1,1,1)(1,1,1,52) er rimelig orden – ev. teste høyere sesongorden gitt LB-funn.
-c. **Sensitivitet på refit-frekvens** for SARIMAX (refit=False vs. refit hver 12. uke) – validerer Spor A's hurtigløsning.
-d. **Bias-korreksjon på ensemble** – enkel post-hoc-justering basert på treningsresidualer.
-e. **Empirisk kalibrerte intervaller** (kvantilregresjon eller bootstrap) som erstatning for de underdekkende Gauss-CI-ene.
-f. **Ensemble-vekting** – ulik vekt på XGBoost og LightGBM per horisont (LightGBM dominerer h=12).
+a. **Rapport-skriving** – tabeller, plot og diskusjon av modellbegrensningene (CI-underdekning, bias, sesongautokorrelasjon). → **Spor D**
+b. **Auto-ARIMA** (`pmdarima`) for å verifisere at (1,1,1)(1,1,1,52) er rimelig orden – ev. teste høyere sesongorden gitt LB-funn. → **Spor E**
+c. **Sensitivitet på refit-frekvens** for SARIMAX (refit=False vs. refit hver 12. uke) – validerer Spor A's hurtigløsning. → **Spor E**
+d. **Bias-korreksjon på ensemble** – enkel post-hoc-justering basert på treningsresidualer. → **Spor F**
+e. **Empirisk kalibrerte intervaller** (kvantilregresjon eller bootstrap) som erstatning for de underdekkende Gauss-CI-ene. → **Spor G**
+f. **Ensemble-vekting** – ulik vekt på XGBoost og LightGBM per horisont (LightGBM dominerer h=12). → **Spor F**
+g. **SHAP-tolkning** for vinnermodell per horisont – tolkbarhet til rapporten. → **Spor F**
 
 ## Tilstand i notebooken
 
