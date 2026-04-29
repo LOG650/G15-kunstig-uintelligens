@@ -53,9 +53,8 @@ FAO_KOLS = {"fao_global_atlantisk_tonn", "fao_norge_tonn", "fao_eks_norge_tonn",
 # --- Hjelpefunksjoner -----------------------------------------------------
 
 def bygg_features(df: pd.DataFrame) -> list:
-    # Bruker uten_fao – samme valg som i ml_eksperiment.py
-    ekskluder = EKSKLUDER_ALLTID | FAO_KOLS
-    return [c for c in df.columns if c not in ekskluder]
+    # FAO inkludert – forward-fill + fao_imputert-flagg frå Spor C eliminerer NaN
+    return [c for c in df.columns if c not in EKSKLUDER_ALLTID]
 
 
 def bygg_datasett(df: pd.DataFrame, horisont: int, feature_kols: list, cutoff: pd.Timestamp):
@@ -103,7 +102,7 @@ def main() -> None:
     feature_kols = bygg_features(df)
 
     print(f"Cutoff: {cutoff.date()} | Test: {test.index.min().date()} – {test.index.max().date()}")
-    print(f"Features: {len(feature_kols)} (uten FAO)\n")
+    print(f"Features: {len(feature_kols)} (inkl. FAO)\n")
 
     resultater = []
     alle_pred = {}   # {horisont: {"xgb": Series, "lgbm": Series, "ensemble": Series}}
@@ -208,6 +207,22 @@ def main() -> None:
     # --- Lagre CSV --------------------------------------------------------
     res_df = pd.DataFrame(resultater)[["horisont", "modell", "n", "MAE", "MAPE"]]
     res_df.to_csv(UT_DIR / "ml_ensemble.csv", index=False)
+
+    # --- Lagre prediksjoner (brukes av ml_residualplot.py) ----------------
+    pred_rows = []
+    for h in HORISONTER:
+        faktisk = test["eksport_pris_nok_kg"]
+        p = alle_pred[h]
+        for dato in faktisk.index:
+            pred_rows.append({
+                "uke_start": dato,
+                "horisont": h,
+                "faktisk": faktisk.get(dato),
+                "xgb_pred": p["xgb"].get(dato),
+                "lgbm_pred": p["lgbm"].get(dato),
+                "ensemble_pred": p["ensemble"].get(dato),
+            })
+    pd.DataFrame(pred_rows).to_csv(UT_DIR / "ml_ensemble_prediksjoner.csv", index=False)
 
     # --- Prediksjonsplot --------------------------------------------------
     fig, axes = plt.subplots(3, 1, figsize=(13, 14), sharex=False)

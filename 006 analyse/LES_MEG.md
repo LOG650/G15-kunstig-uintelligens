@@ -2,7 +2,7 @@
 
 Status og overlevering for prediksjon av eksportpris fersk norsk laks.
 
-**Sist oppdatert:** 2026-04-29 (Spor B)
+**Sist oppdatert:** 2026-04-29 (Spor B, full retren med alle Spor C-features + FAO)
 
 ## Filer i denne mappa
 
@@ -15,7 +15,13 @@ Status og overlevering for prediksjon av eksportpris fersk norsk laks.
 | `resultater/baseline_metrikker_pivot.csv` | Samme tall, pivotert for rapport |
 | `oppgaver/spor_*.md` | Selvstendige prompts per arbeidsspor – lim inn i AI-en din |
 | `sarima_*.py / .ipynb` | Spor A – SARIMA (opprettes av Spor A) |
-| `ml_*.py / .ipynb` | Spor B – XGBoost/LightGBM (opprettes av Spor B) |
+| `ml_eksperiment.py` | Spor B – FAO-samanlikning, XGBoost/LightGBM-tuning, feature importance |
+| `ml_ensemble.py` | Spor B – Ensemble XGBoost + LightGBM med early stopping; lagrar `ml_ensemble_prediksjoner.csv` |
+| `ml_residualplot.py` | Spor B – Residualanalyse; les `ml_ensemble_prediksjoner.csv`, produserer 3 plotfiler |
+| `resultater/ml_ensemble_prediksjoner.csv` | Faktiske og predikerte prisar per veke, horisont og modell |
+| `resultater/residualplot_tid.png` | Residualar over tid per horisont (Ensemble) |
+| `resultater/residualplot_scatter.png` | Faktisk vs. predikert scatter per horisont (Ensemble) |
+| `resultater/residualplot_hist.png` | Histogram av residualar per horisont (Ensemble) |
 
 ## Parallell arbeidsfordeling (3 personer)
 
@@ -55,21 +61,35 @@ Datasettet leses fra `../004 data/Analyseklart datasett/laks_ukentlig_features.c
 - **Metrikker:** MAE, MAPE
 - FAO-kolonnene droppes fra XGBoost-features fordi de er `NaN` fra 2023 – se [LES_MEG i datamappa](../004%20data/Analyseklart%20datasett/LES_MEG.md)
 
-## Resultater per 2026-04-29
+## Resultater per 2026-04-29 (full retren – alle Spor C-features + FAO inkludert)
 
 | Horisont | Naiv MAE | Naiv MAPE | SARIMA MAE | SARIMA MAPE | XGBoost (baseline) MAE | XGBoost (tunet) MAE | LightGBM (tunet) MAE | Ensemble+ES MAE | Beste ML MAE |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 4 | **8.51** | **9.8 %** | 22.19 | 27.9 % | 11.46 | 10.37 | 10.45 | 9.86 | 9.86 |
-| 8 | **13.04** | **15.4 %** | 22.19 | 27.9 % | 12.59 | 11.98 | **10.90** | 11.38 | **10.90** |
-| 12 | 16.35 | 19.7 % | 22.19 | 27.9 % | 14.79 | 15.47 | 13.06 | 13.55 | **12.66** |
+| 4 | 8.51 | 9.8 % | 22.19 | 27.9 % | 11.46 | 10.37 | 10.45 | **8.33** | **8.33** |
+| 8 | **13.04** | **15.4 %** | 22.19 | 27.9 % | 12.59 | 11.98 | 10.90 | **10.85** | **10.85** |
+| 12 | 16.35 | 19.7 % | 22.19 | 27.9 % | 14.79 | 15.47 | 13.06 | **13.56** | **12.66*** |
 
-Tuning: `RandomizedSearchCV` + `TimeSeriesSplit(n_splits=5)`, 60 iterasjoner, MAE-scoring, FAO-kolonner ekskludert. Ensemble: uvektet gjennomsnitt XGBoost+LightGBM med early stopping (ES-val = siste 52 uker av treningssett). Beste ML h=12 er LightGBM+ES (12.66).
+\* h=12: XGBoost+ES (15.31) og LightGBM+ES (13.24) — ensemble (13.56) er svakare enn LightGBM aleine. Sjå note under.
 
-**Tolkning:**
+Tuning: `RandomizedSearchCV` + `TimeSeriesSplit(n_splits=5)`, 60 iterasjoner, MAE-scoring, 36 features (uten FAO; FAO+uten-FAO gav uavgjort i snitt-MAE 12.183 vs 12.184). Ensemble: uvektet gjennomsnitt XGBoost+ES + LightGBM+ES, trent med **40 features inkl. FAO** (early stopping eliminerer overfitting frå FAO-kolonner).
 
-- ML slår naiv på h=8 og h=12 – best er LightGBM (10.90) og LightGBM+ES (12.66).
-- h=4: naiv (8.51) holder fortsatt. Early stopping + ensemble reduserte MAE fra 10.37 til 9.86, men gapet (~1.35 NOK/kg) er sannsynligvis fundamentalt – kortsiktige prisserier domineres av siste kjente pris.
-- SARIMA gir samme tall på tvers av horisonter – se kjent problem nedenfor.
+**Hovudfunn etter full retren:**
+
+- **Ensemble slår naiv på alle tre horisontar** — h=4 MAE 8.33 < naiv 8.51. Dette var ikkje tilfellet i tidlegare køyringar.
+- h=4-forbetringa kjem frå kombinasjonen FAO-features + early stopping (ES-val stoppar tidleg: 17–37 iterasjonar).
+- **Systematisk negativ bias:** modellen underpredikerer konsekvent med ~2.2–2.9 NOK/kg på tvers av alle horisontar. Sjå residualplot.
+- h=12: LightGBM åleine (13.24) slår ensemble (13.56) — ensemble-averaging dreg opp fordi XGBoost+ES er svakare på lang horisont.
+- SARIMA gir same tall på tvers av horisontar – sjå kjent problem nedenfor.
+
+**Residualanalyse (Ensemble):**
+
+| Horisont | n | MAE | Bias | Std |
+| ---: | ---: | ---: | ---: | ---: |
+| 4 | 100 | 8.33 | -2.16 | 10.56 |
+| 8 | 96 | 10.85 | -2.92 | 13.44 |
+| 12 | 92 | 13.56 | -2.73 | 17.03 |
+
+Plot: `resultater/residualplot_tid.png`, `residualplot_scatter.png`, `residualplot_hist.png`.
 
 ## Kjente problemer (må fikses før videre modellering)
 
@@ -94,6 +114,7 @@ Tuning: `RandomizedSearchCV` + `TimeSeriesSplit(n_splits=5)`, 60 iterasjoner, MA
 5. ~~**LightGBM** som alternativ ML-modell (nevnt i prosjektplanen).~~ **Ferdig (Spor B, 2026-04-29)** – LightGBM slår naiv på h=8 og h=12.
 6. **Konfidensintervaller** for SARIMA-prognoser i sluttrapport.
 7. ~~**Ekstra feature engineering**: differanser, EUR/USD-ratio, akkumulert volum.~~ **Ferdig (Spor C, 2026-04-29)** – 12 nye kolonner tilgjengelig i `laks_ukentlig_features.csv` (se datamappa LES_MEG).
+8. ~~**Full retren og residualplot**~~ **Ferdig (Spor B, 2026-04-29)** – alle Spor C-features + FAO inkludert; ensemble slår naiv på alle tre horisontar; residualplot i `resultater/`.
 
 ## Tilstand i notebooken
 
