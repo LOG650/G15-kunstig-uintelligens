@@ -37,10 +37,17 @@ Sammenslått tidsserie for prediksjon av eksportpris på fersk norsk laks.
 
 - **Lag-priser:** `pris_lag_1`, `pris_lag_2`, `pris_lag_4`, `pris_lag_8`, `pris_lag_12`
 - **Lag-volum:** `volum_lag_1`, `volum_lag_4`, `volum_lag_12`
-- **Glidende snitt:** `pris_ma_4`, `pris_ma_12` (begge basert på lag 1, så ingen lekkasje)
+- **Glidende snitt pris:** `pris_ma_4`, `pris_ma_12` (lag-1-basert, ingen lekkasje)
 - **Prisendringer:** `pris_endring_1u`, `pris_endring_4u`, `pris_endring_52u`
 - **Valutaendringer:** `eur_endring_4u`, `usd_endring_4u`
 - **Sesong:** `maaned`, `kvartal`, `uke_sin`, `uke_cos` (syklisk koding av uke)
+- **Volum-differanser (Spor C, 2026-04-29):** `volum_endring_1u`, `volum_endring_4u`, `volum_endring_52u` (lag-1-basert)
+- **Valutaratio (Spor C, 2026-04-29):** `eur_usd_ratio = eur_nok_snitt / usd_nok_snitt`
+- **Akkumulert volum (Spor C, 2026-04-29):** `volum_sum_4u`, `volum_sum_12u`, `volum_sum_52u` (lag-1-basert rullende sum)
+- **Glidende snitt volum (Spor C, 2026-04-29):** `volum_ma_4`, `volum_ma_12` (lag-1-basert)
+- **Prisvolatilitet (Spor C, 2026-04-29):** `pris_std_4`, `pris_std_12` (lag-1-basert rullende std)
+- **Spot vs. trend (Spor C, 2026-04-29):** `pris_vs_ma_12 = pris_lag_1 / pris_ma_12`
+- **FAO-imputation (Spor C, 2026-04-29):** `fao_imputert` – binært flagg (1 = forward-fill frå 2022-verdi, 0 = observert). FAO-kolonnene er no NaN-frie for heile perioden.
 
 ## Kjente begrensninger
 

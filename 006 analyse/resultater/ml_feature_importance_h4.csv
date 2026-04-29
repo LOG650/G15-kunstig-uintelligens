@@ -1,0 +1,16 @@
+feature,importance
+pris_lag_1,0.61625814
+pris_ma_4,0.18454681
+volum_ma_12,0.025840806
+eur_nok_snitt,0.025601538
+uke_cos,0.02198709
+pris_lag_2,0.019082732
+uke_sin,0.014040407
+volum_ma_4,0.012728164
+volum_sum_12u,0.012568337
+volum_sum_52u,0.009711184
+pris_lag_4,0.009087661
+pris_ma_12,0.0058908314
+maaned,0.005473601
+eur_usd_ratio,0.004108212
+pris_endring_1u,0.003015398

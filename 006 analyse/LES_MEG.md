@@ -2,7 +2,11 @@
 
 Status og overlevering for prediksjon av eksportpris fersk norsk laks.
 
+<<<<<<< HEAD
 **Sist oppdatert:** 2026-04-29 (Spor A ferdig)
+=======
+**Sist oppdatert:** 2026-04-29 (Spor B, full retren med alle Spor C-features + FAO)
+>>>>>>> b146ea7f6f5a2f661933164502f9eab3c9613ad8
 
 ## Filer i denne mappa
 
@@ -14,6 +18,7 @@ Status og overlevering for prediksjon av eksportpris fersk norsk laks.
 | `resultater/baseline_metrikker.csv` | Long-format MAE/MAPE per (modell, horisont) |
 | `resultater/baseline_metrikker_pivot.csv` | Samme tall, pivotert for rapport |
 | `oppgaver/spor_*.md` | Selvstendige prompts per arbeidsspor – lim inn i AI-en din |
+<<<<<<< HEAD
 | `sarima_eksperiment.py` | Spor A – SARIMA / SARIMAX med rullende opphav og 95 % CI |
 | `resultater/sarima_metrikker.csv` | MAE/MAPE for SARIMA og SARIMAX per horisont |
 | `resultater/sarima_prognose_h{4,8,12}.csv` | SARIMA-prognoser med 95 % CI |
@@ -23,6 +28,16 @@ Status og overlevering for prediksjon av eksportpris fersk norsk laks.
 | `resultater/sarima_residualdiagnostikk.csv` | Ljung-Box + Jarque-Bera på treningsresidualer |
 | `resultater/sarima_residualer.png`, `sarimax_residualer.png` | ACF og QQ-plot av standardiserte residualer |
 | `ml_*.py / .ipynb` | Spor B – XGBoost/LightGBM (opprettes av Spor B) |
+=======
+| `sarima_*.py / .ipynb` | Spor A – SARIMA (opprettes av Spor A) |
+| `ml_eksperiment.py` | Spor B – FAO-samanlikning, XGBoost/LightGBM-tuning, feature importance |
+| `ml_ensemble.py` | Spor B – Ensemble XGBoost + LightGBM med early stopping; lagrar `ml_ensemble_prediksjoner.csv` |
+| `ml_residualplot.py` | Spor B – Residualanalyse; les `ml_ensemble_prediksjoner.csv`, produserer 3 plotfiler |
+| `resultater/ml_ensemble_prediksjoner.csv` | Faktiske og predikerte prisar per veke, horisont og modell |
+| `resultater/residualplot_tid.png` | Residualar over tid per horisont (Ensemble) |
+| `resultater/residualplot_scatter.png` | Faktisk vs. predikert scatter per horisont (Ensemble) |
+| `resultater/residualplot_hist.png` | Histogram av residualar per horisont (Ensemble) |
+>>>>>>> b146ea7f6f5a2f661933164502f9eab3c9613ad8
 
 ## Parallell arbeidsfordeling (3 personer)
 
@@ -62,8 +77,9 @@ Datasettet leses fra `../004 data/Analyseklart datasett/laks_ukentlig_features.c
 - **Metrikker:** MAE, MAPE
 - FAO-kolonnene droppes fra XGBoost-features fordi de er `NaN` fra 2023 – se [LES_MEG i datamappa](../004%20data/Analyseklart%20datasett/LES_MEG.md)
 
-## Resultater per 2026-04-29
+## Resultater per 2026-04-29 (full retren – alle Spor C-features + FAO inkludert)
 
+<<<<<<< HEAD
 | Horisont | Naiv MAE | Naiv MAPE | SARIMA MAE¹ | SARIMA MAPE¹ | SARIMAX MAE¹ | SARIMAX MAPE¹ | XGBoost MAE | XGBoost MAPE |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | 4 | 8.51 | 9.8 % | **8.27** | **9.5 %** | 8.33 | 9.6 % | 11.46 | 13.7 % |
@@ -97,6 +113,35 @@ CI-ene er **systematisk for smale** (~80 % faktisk dekning vs. 95 % nominell). D
 - **Ljung-Box forkaster hvit-støy-hypotesen på alle lag** – modellen fanger ikke all autokorrelasjon, særlig sesongleddet ved lag 52.
 - **Residualene har feterehaler enn normal** (kurtose ≈ 4.5 vs. 3 for normalfordeling) – derfor er Gauss-baserte CI-er for trange.
 - For rapporten bør disse begrensningene rapporteres ærlig: punktprognoser er rimelige, men intervallene gir falsk presisjon.
+=======
+| Horisont | Naiv MAE | Naiv MAPE | SARIMA MAE | SARIMA MAPE | XGBoost (baseline) MAE | XGBoost (tunet) MAE | LightGBM (tunet) MAE | Ensemble+ES MAE | Beste ML MAE |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 4 | 8.51 | 9.8 % | 22.19 | 27.9 % | 11.46 | 10.37 | 10.45 | **8.33** | **8.33** |
+| 8 | **13.04** | **15.4 %** | 22.19 | 27.9 % | 12.59 | 11.98 | 10.90 | **10.85** | **10.85** |
+| 12 | 16.35 | 19.7 % | 22.19 | 27.9 % | 14.79 | 15.47 | 13.06 | **13.56** | **12.66*** |
+
+\* h=12: XGBoost+ES (15.31) og LightGBM+ES (13.24) — ensemble (13.56) er svakare enn LightGBM aleine. Sjå note under.
+
+Tuning: `RandomizedSearchCV` + `TimeSeriesSplit(n_splits=5)`, 60 iterasjoner, MAE-scoring, 36 features (uten FAO; FAO+uten-FAO gav uavgjort i snitt-MAE 12.183 vs 12.184). Ensemble: uvektet gjennomsnitt XGBoost+ES + LightGBM+ES, trent med **40 features inkl. FAO** (early stopping eliminerer overfitting frå FAO-kolonner).
+
+**Hovudfunn etter full retren:**
+
+- **Ensemble slår naiv på alle tre horisontar** — h=4 MAE 8.33 < naiv 8.51. Dette var ikkje tilfellet i tidlegare køyringar.
+- h=4-forbetringa kjem frå kombinasjonen FAO-features + early stopping (ES-val stoppar tidleg: 17–37 iterasjonar).
+- **Systematisk negativ bias:** modellen underpredikerer konsekvent med ~2.2–2.9 NOK/kg på tvers av alle horisontar. Sjå residualplot.
+- h=12: LightGBM åleine (13.24) slår ensemble (13.56) — ensemble-averaging dreg opp fordi XGBoost+ES er svakare på lang horisont.
+- SARIMA gir same tall på tvers av horisontar – sjå kjent problem nedenfor.
+
+**Residualanalyse (Ensemble):**
+
+| Horisont | n | MAE | Bias | Std |
+| ---: | ---: | ---: | ---: | ---: |
+| 4 | 100 | 8.33 | -2.16 | 10.56 |
+| 8 | 96 | 10.85 | -2.92 | 13.44 |
+| 12 | 92 | 13.56 | -2.73 | 17.03 |
+
+Plot: `resultater/residualplot_tid.png`, `residualplot_scatter.png`, `residualplot_hist.png`.
+>>>>>>> b146ea7f6f5a2f661933164502f9eab3c9613ad8
 
 ## Kjente problemer (må fikses før videre modellering)
 
@@ -118,6 +163,7 @@ CI-ene er **systematisk for smale** (~80 % faktisk dekning vs. 95 % nominell). D
 
 ## Neste steg (prioritert)
 
+<<<<<<< HEAD
 1. ~~**Fiks SARIMA-evalueringen** med rullende opphav.~~ ✅ Spor A 2026-04-29.
 2. **Bestem FAO-håndtering** og kjør XGBoost på nytt med fao-features inkludert. (Spor B)
 3. **Hyperparameter-tuning XGBoost** (`RandomizedSearchCV` + `TimeSeriesSplit`)
@@ -128,6 +174,17 @@ CI-ene er **systematisk for smale** (~80 % faktisk dekning vs. 95 % nominell). D
 7. **Ekstra feature engineering**: differanser, EUR/USD-ratio, akkumulert volum. (Spor C)
 8. **Auto-ARIMA** (`pmdarima`) for å verifisere at (1,1,1)(1,1,1,52) er rimelig orden. (Spor A – nice-to-have)
 9. **Sensitivitetsanalyse** av refit-frekvens for SARIMAX (refit=False vs. refit hver 12. uke). (Spor A – nice-to-have)
+=======
+1. **Fiks SARIMA-evalueringen** med rullende opphav. Dette er forutsetningen for
+   at sammenligningen mot XGBoost skal være meningsfull.
+2. ~~**Bestem FAO-håndtering**~~ **Ferdig (Spor C, 2026-04-29)** – FAO-kolonnene er forward-filla for 2023–2026; `fao_imputert`-flagg skiller observerte fra interpolerte rader. XGBoost kan no bruke FAO-features utan å droppe dei.
+3. ~~**Hyperparameter-tuning XGBoost** (`RandomizedSearchCV` + `TimeSeriesSplit`)~~ **Ferdig (Spor B, 2026-04-29)** – tunet XGBoost og LightGBM, resultat i `resultater/xgboost_tunet.csv` og `lgbm_tunet.csv`.
+4. **SARIMAX med valuta som eksogen regressor** (`eur_nok_snitt`, `usd_nok_snitt`).
+5. ~~**LightGBM** som alternativ ML-modell (nevnt i prosjektplanen).~~ **Ferdig (Spor B, 2026-04-29)** – LightGBM slår naiv på h=8 og h=12.
+6. **Konfidensintervaller** for SARIMA-prognoser i sluttrapport.
+7. ~~**Ekstra feature engineering**: differanser, EUR/USD-ratio, akkumulert volum.~~ **Ferdig (Spor C, 2026-04-29)** – 12 nye kolonner tilgjengelig i `laks_ukentlig_features.csv` (se datamappa LES_MEG).
+8. ~~**Full retren og residualplot**~~ **Ferdig (Spor B, 2026-04-29)** – alle Spor C-features + FAO inkludert; ensemble slår naiv på alle tre horisontar; residualplot i `resultater/`.
+>>>>>>> b146ea7f6f5a2f661933164502f9eab3c9613ad8
 
 ## Tilstand i notebooken
 
