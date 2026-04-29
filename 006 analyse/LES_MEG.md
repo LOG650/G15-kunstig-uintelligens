@@ -57,20 +57,19 @@ Datasettet leses fra `../004 data/Analyseklart datasett/laks_ukentlig_features.c
 
 ## Resultater per 2026-04-29
 
-| Horisont | Naiv MAE | Naiv MAPE | SARIMA MAE | SARIMA MAPE | XGBoost (baseline) MAE | XGBoost (tunet) MAE | XGBoost (tunet) MAPE | LightGBM (tunet) MAE | LightGBM (tunet) MAPE |
+| Horisont | Naiv MAE | Naiv MAPE | SARIMA MAE | SARIMA MAPE | XGBoost (baseline) MAE | XGBoost (tunet) MAE | LightGBM (tunet) MAE | Ensemble+ES MAE | Beste ML MAE |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 4 | **8.51** | **9.8 %** | 22.19 | 27.9 % | 11.46 | 10.37 | 12.2 % | 10.45 | 12.3 % |
-| 8 | **13.04** | **15.4 %** | 22.19 | 27.9 % | 12.59 | 11.98 | 14.3 % | **10.90** | **12.9 %** |
-| 12 | 16.35 | 19.7 % | 22.19 | 27.9 % | 14.79 | 15.47 | 19.0 % | **13.06** | **16.0 %** |
+| 4 | **8.51** | **9.8 %** | 22.19 | 27.9 % | 11.46 | 10.37 | 10.45 | 9.86 | 9.86 |
+| 8 | **13.04** | **15.4 %** | 22.19 | 27.9 % | 12.59 | 11.98 | **10.90** | 11.38 | **10.90** |
+| 12 | 16.35 | 19.7 % | 22.19 | 27.9 % | 14.79 | 15.47 | 13.06 | 13.55 | **12.66** |
 
-XGBoost tunet: `RandomizedSearchCV` + `TimeSeriesSplit(n_splits=5)`, 60 iterasjonar, MAE-scoring, FAO-kolonner ekskludert (uten_fao vann marginalt). LightGBM: same protokoll.
+Tuning: `RandomizedSearchCV` + `TimeSeriesSplit(n_splits=5)`, 60 iterasjoner, MAE-scoring, FAO-kolonner ekskludert. Ensemble: uvektet gjennomsnitt XGBoost+LightGBM med early stopping (ES-val = siste 52 uker av treningssett). Beste ML h=12 er LightGBM+ES (12.66).
 
 **Tolkning:**
 
-- LightGBM slår naiv på h=8 (10.90 vs 13.04) og h=12 (13.06 vs 16.35) – stor forbetring.
-- h=4 er vanskelegast: naiv (8.51) held framleis, truleg fordi pris-laga dominerer over korte horisontar.
-- XGBoost tunet h=12 (15.47) er svakare enn baseline (14.79) – CV-optimaliseringa generaliserer betre via LightGBM for lange horisontar.
-- SARIMA gir same tall på tvers av horisontar – sjå kjent problem nedanfor.
+- ML slår naiv på h=8 og h=12 – best er LightGBM (10.90) og LightGBM+ES (12.66).
+- h=4: naiv (8.51) holder fortsatt. Early stopping + ensemble reduserte MAE fra 10.37 til 9.86, men gapet (~1.35 NOK/kg) er sannsynligvis fundamentalt – kortsiktige prisserier domineres av siste kjente pris.
+- SARIMA gir samme tall på tvers av horisonter – se kjent problem nedenfor.
 
 ## Kjente problemer (må fikses før videre modellering)
 
