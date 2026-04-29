@@ -16,7 +16,8 @@
       "Bash(python -c \"import nbconvert; print\\(nbconvert.__version__\\)\")",
       "Bash(python -m nbconvert --to notebook --execute baseline_modeller.ipynb --output baseline_modeller.ipynb --ExecutePreprocessor.timeout=600)",
       "Bash(python -c ' *)",
-      "Bash(python eksporter_baseline.py)"
+      "Bash(python eksporter_baseline.py)",
+      "Bash(python \"006 analyse/sarima_eksperiment.py\")"
     ]
   }
 }
