@@ -7,7 +7,16 @@
       "Bash(python -c \"import statsmodels, xgboost, sklearn, matplotlib, nbformat; print\\('OK'\\)\")",
       "Bash(python _bygg_notebook.py)",
       "Bash(python -c \"import nbconvert\")",
-      "Bash(python -m pip install --quiet nbconvert jupyter)"
+      "Bash(python -m pip install --quiet nbconvert jupyter)",
+      "Bash(python -c \"import pandas, numpy, matplotlib, sklearn, statsmodels, xgboost; print\\('all packages available'\\)\")",
+      "Bash(python -c \"import jupyter; print\\(jupyter.__version__\\)\")",
+      "Bash(python -m jupyter --version)",
+      "Bash(python -m jupyter nbconvert --to notebook --execute baseline_modeller.ipynb --output baseline_modeller.ipynb --ExecutePreprocessor.timeout=600)",
+      "Bash(python -m pip show nbconvert)",
+      "Bash(python -c \"import nbconvert; print\\(nbconvert.__version__\\)\")",
+      "Bash(python -m nbconvert --to notebook --execute baseline_modeller.ipynb --output baseline_modeller.ipynb --ExecutePreprocessor.timeout=600)",
+      "Bash(python -c ' *)",
+      "Bash(python eksporter_baseline.py)"
     ]
   }
 }
