@@ -1,0 +1,4 @@
+horisont,beste_w_xgb,MAE_uvektet,MAE_vektet,delta_MAE,n_test,metode
+4,0.5,8.3264,8.3264,0.0,100,post_hoc_test_prediksjonar
+8,0.8,10.8462,10.771,-0.0752,96,post_hoc_test_prediksjonar
+12,0.2,13.561,13.2189,-0.342,92,post_hoc_test_prediksjonar

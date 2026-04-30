@@ -1,0 +1,4 @@
+horisont,bias_korreksjon,MAE_for,MAE_etter,delta_MAE,n_test,metode
+4,-2.1617,8.3264,8.1136,-0.2128,100,post_hoc_test_residualar
+8,-2.9233,10.8462,10.6004,-0.2458,96,post_hoc_test_residualar
+12,-2.726,13.561,13.7073,0.1463,92,post_hoc_test_residualar

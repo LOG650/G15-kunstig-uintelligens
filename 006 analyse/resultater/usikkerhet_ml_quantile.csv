@@ -1,0 +1,4 @@
+modell,horisont,n,dekning,gj_bredde
+LightGBM_quantile,4,104,0.4615,18.1939
+LightGBM_quantile,8,104,0.4615,18.4018
+LightGBM_quantile,12,104,0.3462,14.2551

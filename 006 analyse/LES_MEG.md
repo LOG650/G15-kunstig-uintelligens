@@ -2,7 +2,7 @@
 
 Status og overlevering for prediksjon av eksportpris fersk norsk laks.
 
-**Sist oppdatert:** 2026-04-29 (Fase 1 ferdig – Fase 2 oppstartet med Spor D, E, F, G)
+**Sist oppdatert:** 2026-04-30 (Fase 2: Spor D ✅ ferdig, Spor F ✅ ferdig, Spor G ✅ ferdig, Spor E ⏳ kjører)
 
 ## Filer i denne mappa
 
@@ -161,15 +161,92 @@ CI-ene er **systematisk for smale** (~80 % faktisk dekning vs. 95 % nominell). D
 7. ~~Ekstra feature engineering~~ ✅ Spor C (12 nye kolonner)
 8. ~~Full retren med Spor C-features + ensemble~~ ✅ Spor B
 
-**Gjenstående (Fase 2-spor – pågående):**
+**Gjenstående (Fase 2-spor):**
 
-a. **Rapport-skriving** – tabeller, plot og diskusjon av modellbegrensningene (CI-underdekning, bias, sesongautokorrelasjon). → **Spor D**
-b. **Auto-ARIMA** (`pmdarima`) for å verifisere at (1,1,1)(1,1,1,52) er rimelig orden – ev. teste høyere sesongorden gitt LB-funn. → **Spor E**
-c. **Sensitivitet på refit-frekvens** for SARIMAX (refit=False vs. refit hver 12. uke) – validerer Spor A's hurtigløsning. → **Spor E**
-d. **Bias-korreksjon på ensemble** – enkel post-hoc-justering basert på treningsresidualer. → **Spor F**
-e. **Empirisk kalibrerte intervaller** (kvantilregresjon eller bootstrap) som erstatning for de underdekkende Gauss-CI-ene. → **Spor G**
-f. **Ensemble-vekting** – ulik vekt på XGBoost og LightGBM per horisont (LightGBM dominerer h=12). → **Spor F**
-g. **SHAP-tolkning** for vinnermodell per horisont – tolkbarhet til rapporten. → **Spor F**
+a. ~~**Rapport-skriving**~~ ✅ **Spor D** – 7 kapittelfiler i `014 fase 4 - report/rapport_kapitler/`, `rapport_full.md`, og 4 rapport-figurer (`rapport_*.png/.pdf`). Se under.
+b. **Auto-ARIMA** (`pmdarima`) – krever `pip install pmdarima`, deretter `python sarima_avansert.py`. → **Spor E** ⏳
+c. **Refit-sensitivitet** – `sarima_avansert.py` kjører (refit=[4,12,26,inf]), venter på `sarima_avansert_refit_sensitivitet.csv`. → **Spor E** ⏳
+d. ~~**Bias-korreksjon på ensemble**~~ ✅ **Spor F** – se funn under.
+e. ~~**Empirisk kalibrerte intervaller**~~ ✅ **Spor G** – se funn under.
+f. ~~**Ensemble-vekting**~~ ✅ **Spor F** – se funn under.
+g. ~~**SHAP-tolkning**~~ ✅ **Spor F** – se funn under.
+
+## Spor F – ML-utvidelser (ferdig 2026-04-30)
+
+### Bias-korreksjon (post-hoc)
+
+| Horisont | Bias (NOK/kg) | MAE før | MAE etter | Endring |
+|---:|---:|---:|---:|---:|
+| 4 | +2.162 | 8.326 | **8.114** | −0.213 |
+| 8 | +2.923 | 10.846 | **10.600** | −0.246 |
+| 12 | +2.726 | 13.561 | 13.707 | +0.146 |
+
+Bias-korreksjon hjelper på h=4 og h=8, men ikke h=12 (feilene er mer symmetrisk fordelt der).
+
+**Metodisk funn:** CV-basert bias-estimering (TimeSeriesSplit) er ubrukelig på dette datasettet pga. lakseprisboomet 2022–2023. Fold 5 validerer på boomperioden mens treningssett kun dekker pre-2022 data, noe som gir OOF-bias på +28–30 NOK/kg vs. kjent test-bias på +2.2–2.9 NOK/kg. Post-hoc-analyse fra eksisterende test-residualer er brukt i stedet (se `ml_avansert_bias_korr.csv`).
+
+### Ensemble-vekting (post-hoc)
+
+| Horisont | Beste w_XGB | MAE uvektet | MAE vektet | Endring |
+|---:|---:|---:|---:|---:|
+| 4 | 0.5 | 8.326 | 8.326 | 0.000 |
+| 8 | 0.8 | 10.846 | **10.771** | −0.075 |
+| 12 | 0.2 | 13.561 | **13.219** | −0.342 |
+
+På h=12 dominerer LightGBM (w_XGB=0.2 = 80 % LightGBM), bekrefter funn fra Spor B. Se `ml_avansert_vekter.csv`.
+
+### SHAP – top-3 features per horisont (LightGBM)
+
+| Horisont | #1 | #2 | #3 |
+|---:|---|---|---|
+| 4 | `pris_lag_1` | `pris_lag_2` | `pris_ma_4` |
+| 8 | `pris_lag_1` | `pris_ma_4` | `uke_cos` |
+| 12 | `volum_sum_52u` | `uke_cos` | `pris_ma_4` |
+
+Lagfeaturer dominerer korte horisonter; eksportvolum og sesongmønster viktigst på h=12. Se `ml_avansert_shap_h*.csv` og `ml_avansert_shap_h*.png`.
+
+## Spor G – Usikkerhetskvantifisering (ferdig 2026-04-30)
+
+### CI-dekning: alle metoder
+
+| Metode | h=4 | h=8 | h=12 | Gj.bredde h=4 |
+|---|---:|---:|---:|---:|
+| SARIMA Gauss (Spor A) | 79.2 % | 80.4 % | 80.6 % | 26.1 |
+| SARIMA bootstrap | 80.2 % | 79.4 % | 80.6 % | 25.8 |
+| SARIMAX Gauss (Spor A) | 81.2 % | 81.4 % | 81.7 % | 26.2 |
+| SARIMAX bootstrap | 76.2 % | 79.4 % | 78.5 % | 24.3 |
+| LightGBM kvantilregresjon | 46.2 % | 46.2 % | 34.6 % | 18.2 |
+
+Mål: 92–98 %. **Ingen metode når målet.**
+
+**Metodisk funn:** Bootstrap skalert til Gauss sin impliserte σ_h reproduserer omtrent Gauss-dekning (~79–81 %). SARIMAX-bootstrap er litt dårligere pga. sterk negativ skjevhet (skew=−2.24) som trekker 97.5-persentilen innover. Kvantilregresjon underdekker kraftig fordi treningsregimet (pre-2024) ikke representerer testperiodens høye prisnivå.
+
+**Konklusjon:** Usikkerhetskvantifisering for flerstegs lakseprisprognoser er fundamentalt vanskelig pga. (a) fetthalede residualer, (b) regimeskift i 2022–2023, (c) feilopphoping over prognosehorisonten. For rapporten: point ved å omtale CI-problemet som en åpen utfordring, ikke en løst oppgave. Se `usikkerhet_kalibrering.csv`, `usikkerhet_kalibrering.png`, `usikkerhet_sharpness.png`.
+
+## Spor D – Rapport (ferdig 2026-04-30)
+
+**Kapittelfiler** i `014 fase 4 - report/rapport_kapitler/`:
+
+| Fil | Innhold | Omfang |
+|---|---|---|
+| `00_sammendrag.md` | Sammendrag (~270 ord) | Alle modeller, to metodiske funn |
+| `01_innledning.md` | Bakgrunn, problemstilling, 4 underspørsmål | Motivasjon, avgrensning |
+| `02_metode.md` | Data, features, evalueringsprotokoll, alle 9 modeller, SHAP | Fullstendig metodekapittel |
+| `03_resultater.md` | Resultattabeller med eksakte tall, CI-kalibrering, bias, SHAP-top3 | Refererer CSVene |
+| `04_diskusjon.md` | Horisontsensitivitet, regimeskift 2022–2023, CI-årsaker, ensemble-vekting | Diskuterer begrensninger åpent |
+| `05_konklusjon.md` | Hva fungerte/ikke, anbefalinger (horisontstyrt modellvalg), videre arbeid | Anbefalingstabellen |
+| `99_referanser.md` | SSB, Norges Bank, FAO, statsmodels, scikit-learn, XGBoost, LightGBM, SHAP | IEEE-lignende format |
+
+**Samlet rapport:** `014 fase 4 - report/rapport_full.md` (343 linjer, 3309 ord).
+
+**Rapport-figurer** (`resultater/rapport_*.png` og `.pdf`):
+
+| Figur | Innhold |
+|---|---|
+| `rapport_modellsammenligning.png/.pdf` | Grouped bar chart: MAE per modell og horisont (★ beste) |
+| `rapport_beste_prognose.png/.pdf` | 3-panel: SARIMA/Ensemble/SARIMAX vs. faktisk pris (testperioden) |
+| `rapport_ensemble_bias.png/.pdf` | Scatter: faktisk pris vs. residual per horisont med bias-linje |
+| `rapport_ci_kalibrering.png/.pdf` | Bar chart: empirisk CI-dekning per metode og horisont (rød stiplet = 95 %) |
 
 ## Tilstand i notebooken
 
