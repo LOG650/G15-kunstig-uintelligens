@@ -21,7 +21,9 @@
       "Bash(conda run *)",
       "Bash(conda env *)",
       "Bash(pip3.9 install *)",
-      "Bash(python3.9 -m pip install openpyxl --user --quiet)"
+      "Bash(python3.9 -m pip install openpyxl --user --quiet)",
+      "PowerShell(pip install *)",
+      "PowerShell(python -c \"import pmdarima; print\\('pmdarima', pmdarima.__version__\\)\" 2>&1)"
     ]
   }
 }

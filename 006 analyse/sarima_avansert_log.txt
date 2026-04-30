@@ -1,0 +1,85 @@
+Train: 2010-01-04 – 2024-03-11 (741 uker)
+Test:  2024-03-18 – 2026-03-09 (104 uker)
+
+[Spor A baseline] Tilpasser SARIMA(1,1,1)(1,1,1,52) ...
+  AIC=3221.4, BIC=3243.7
+
+============================================================
+STEG 1: Auto-ARIMA ordensverifikasjon
+============================================================
+
+[auto-ARIMA] pmdarima ikke installert.
+  Installer med: pip install pmdarima
+  Hopper over steg 1 – bruker Spor A sin orden som fallback.
+
+--- Auto-ARIMA sammenligning ---
+                       modell  p  d  q  P  D  Q  m      AIC     BIC   kilde  MAE_h4  MAE_h8  MAE_h12  MAPE_h4  MAPE_h8  MAPE_h12
+SARIMA(1,1,1)(1,1,1,52)_SporA  1  1  1  1  1  1 52 3221.429 3243.69 manuell    8.27  11.074   13.151    0.095    0.131     0.159
+
+============================================================
+STEG 2: Refit-sensitivitetsanalyse
+============================================================
+
+[SARIMA_refit4] Tilpasser pa 741 treningspunkter ...
+  Treningsfit: AIC=3221.4, BIC=3243.7
+  26/104 uker behandlet
+  52/104 uker behandlet
+  78/104 uker behandlet
+  104/104 uker behandlet
+  Kjoretid: 1485 sek
+
+[SARIMA_refit12] Tilpasser pa 741 treningspunkter ...
+  Treningsfit: AIC=3221.4, BIC=3243.7
+  26/104 uker behandlet
+  52/104 uker behandlet
+  78/104 uker behandlet
+  104/104 uker behandlet
+  Kjoretid: 718 sek
+
+[SARIMA_refit26] Tilpasser pa 741 treningspunkter ...
+  Treningsfit: AIC=3221.4, BIC=3243.7
+  26/104 uker behandlet
+  52/104 uker behandlet
+  78/104 uker behandlet
+  104/104 uker behandlet
+  Kjoretid: 450 sek
+
+[SARIMA_refitinf] Tilpasser pa 741 treningspunkter ...
+  Treningsfit: AIC=3221.4, BIC=3243.7
+  26/104 uker behandlet
+  52/104 uker behandlet
+  78/104 uker behandlet
+  104/104 uker behandlet
+  Kjoretid: 188 sek
+
+--- MAE per refit-frekvens og horisont ---
+horisont           4       8       12
+refit_hver_uke                       
+1                 NaN     NaN     NaN
+4               8.517  11.281  13.459
+12              8.460  11.207  13.317
+26              8.451  11.163  13.299
+inf             8.270  11.074  13.151
+
+--- Kjoretid per refit-frekvens ---
+refit_hver_uke
+1         NaN
+4      1484.9
+12      717.5
+26      450.0
+inf     188.3
+
+Lager figurer ...
+  Lagret: sarima_avansert_refit_sensitivitet.png
+
+============================================================
+OPPSUMMERING – Spor E
+============================================================
+pmdarima ikke tilgjengelig – auto-ARIMA-steg hoppet over.
+
+Refit-sensitivitet (delta MAE vs. refit=inf, som er Spor A sin tilnærming):
+  refit=4: h=4: +0.247, h=8: +0.207, h=12: +0.308
+  refit=12: h=4: +0.190, h=8: +0.133, h=12: +0.166
+  refit=26: h=4: +0.181, h=8: +0.089, h=12: +0.148
+
+Ferdig. Resultater i C:\G15-kunstig-uintelligens\006 analyse\resultater
