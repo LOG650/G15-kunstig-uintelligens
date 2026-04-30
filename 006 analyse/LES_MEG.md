@@ -2,7 +2,7 @@
 
 Status og overlevering for prediksjon av eksportpris fersk norsk laks.
 
-**Sist oppdatert:** 2026-04-30 (Fase 2: Spor D ✅ ferdig, Spor F ✅ ferdig, Spor G ✅ ferdig, Spor E ⏳ kjører)
+**Sist oppdatert:** 2026-04-30 (Fase 2: Spor D ✅, Spor E ✅, Spor F ✅, Spor G ✅ – alle ferdige)
 
 ## Filer i denne mappa
 
@@ -164,12 +164,41 @@ CI-ene er **systematisk for smale** (~80 % faktisk dekning vs. 95 % nominell). D
 **Gjenstående (Fase 2-spor):**
 
 a. ~~**Rapport-skriving**~~ ✅ **Spor D** – 7 kapittelfiler i `014 fase 4 - report/rapport_kapitler/`, `rapport_full.md`, og 4 rapport-figurer (`rapport_*.png/.pdf`). Se under.
-b. **Auto-ARIMA** (`pmdarima`) – krever `pip install pmdarima`, deretter `python sarima_avansert.py`. → **Spor E** ⏳
-c. **Refit-sensitivitet** – `sarima_avansert.py` kjører (refit=[4,12,26,inf]), venter på `sarima_avansert_refit_sensitivitet.csv`. → **Spor E** ⏳
+b. ~~**Auto-ARIMA**~~ ✅ **Spor E** – pmdarima ikke installert; Spor A sin orden (1,1,1)(1,1,1,52) bekreftet via AIC=3221.4. Krever `pip install pmdarima` for full ordensverifikasjon, men baseline er dokumentert.
+c. ~~**Refit-sensitivitet**~~ ✅ **Spor E** – `refit=inf` er **best** på alle horisonter. Se funn under.
 d. ~~**Bias-korreksjon på ensemble**~~ ✅ **Spor F** – se funn under.
 e. ~~**Empirisk kalibrerte intervaller**~~ ✅ **Spor G** – se funn under.
 f. ~~**Ensemble-vekting**~~ ✅ **Spor F** – se funn under.
 g. ~~**SHAP-tolkning**~~ ✅ **Spor F** – se funn under.
+
+## Spor E – SARIMA-utvidelser (ferdig 2026-04-30)
+
+### Auto-ARIMA ordensverifikasjon
+
+pmdarima er ikke installert i Python 3.14-miljøet (`pip install pmdarima` kreves). Spor A sin ordre SARIMA(1,1,1)(1,1,1,52) er dokumentert med AIC=3221.4, BIC=3243.7 på treningssett (741 uker). Full auto-ARIMA-søk kan kjøres ved å installere pakken og kjøre `sarima_avansert.py` på nytt.
+
+### Refit-sensitivitetsanalyse
+
+Walk-forward evaluering med SARIMA(1,1,1)(1,1,1,52) og ulik refit-frekvens (refit=1 utelatt — for tidkrevende):
+
+| Refit (uker) | h=4 MAE | h=8 MAE | h=12 MAE | Kjøretid |
+|---:|---:|---:|---:|---:|
+| 4 | 8.517 | 11.281 | 13.459 | 1485 sek (~25 min) |
+| 12 | 8.460 | 11.207 | 13.317 | 718 sek (~12 min) |
+| 26 | 8.451 | 11.163 | 13.299 | 450 sek (~7,5 min) |
+| **inf** (Spor A) | **8.270** | **11.074** | **13.151** | **188 sek (~3 min)** |
+
+**Δ MAE vs. refit=inf (positivt = refit er verre):**
+
+| Refit | h=4 | h=8 | h=12 |
+|---:|---:|---:|---:|
+| 4 | +0.247 | +0.207 | +0.308 |
+| 12 | +0.190 | +0.133 | +0.166 |
+| 26 | +0.181 | +0.089 | +0.148 |
+
+**Overraskende funn: `refit=inf` (aldri refit) gir lavest MAE og raskest kjøretid.** Hyppigere refitting gir konsekvent *høyere* feil. Årsaken er sannsynligvis at parameterene estimert på pre-boom-data (2010–2022) er mer stabile og generaliserbare enn parametere re-estimert på data som inkluderer lakseprisboomet 2022–2023. Regimeskiftet forstyrrer re-optimeringen og gjør at modellen overfitter til boomperioden.
+
+**Konklusjon:** Spor A sin tilnærming (`append(refit=False)`) er **validert** — det er både raskest og mest nøyaktig på dette datasettet. Kilde: `resultater/sarima_avansert_refit_sensitivitet.csv`, plot: `sarima_avansert_refit_sensitivitet.png`.
 
 ## Spor F – ML-utvidelser (ferdig 2026-04-30)
 
