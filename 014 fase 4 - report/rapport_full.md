@@ -506,13 +506,13 @@ Den største begrensningen i studien er modellenes sårbarhet for strukturelle r
 
 # Erklæring om bruk av kunstig intelligens
 
-I arbeidet med denne rapporten er generative KI-verktøy benyttet som støtte i følgende prosesser:
+KI-verktøy — primært Claude (Anthropic) og GitHub Copilot — er brukt gjennomgående og i betydelig omfang gjennom hele arbeidet med denne rapporten. Nedenfor beskrives bruken presist:
 
-- **Kodeassistanse:** GitHub Copilot og Claude (Anthropic) er brukt til å skrive og feilsøke Python-kode for datainnhenting, feature-engineering, modelltrening og visualisering.
-- **Litteratursøk og tekstutkast:** Claude er benyttet til å formulere utkast til enkeltavsnitt og til å identifisere relevante referanser, som deretter er vurdert og verifisert av forfatterne.
-- **Dataanalyse:** KI-verktøy er brukt til å tolke og diskutere statistiske resultater under forfatternes faglige veiledning.
+- **Kodeassistanse (omfattende):** All Python-kode for datainnhenting, feature-engineering, modelltrening, statistiske tester (inkludert Diebold-Mariano-testen), usikkerhetsanalyse og figurproduksjon er skrevet med aktiv KI-assistanse. Koden er gjennomgått og kjørt av gruppemedlemmene, og resultatene er verifisert mot forventede verdier.
+- **Tekstproduksjon (omfattende):** Substantielle deler av rapportteksten — inkludert utkast til metodekapittel, resultatpresentasjoner, diskusjon og konklusjon — er generert av Claude og deretter gjennomgått, revidert og godkjent av forfatterne. Revisjoner som svar på faglige tilbakemeldinger er gjennomført med Claude som primær skriveassistent.
+- **Analyse og tolkning:** KI-verktøy er benyttet til å tolke statistiske resultater, identifisere relevante referanser og strukturere faglige argumenter. Alle faglige vurderinger er gjennomgått og bekreftet av forfatterne.
 
-Alt faglig innhold, alle konklusjoner og all endelig tekst er skrevet, vurdert og godkjent av gruppemedlemmene. KI er utelukkende benyttet som hjelpeverktøy og har ikke erstattet forfatternes faglige vurderinger. Studien er gjennomført i samsvar med retningslinjene for akademisk redelighet ved Høgskolen i Molde.
+Forfatterne har lest, diskutert og tatt akademisk ansvar for alt innhold i rapporten. Faglige konklusjoner er forankret i analyseresultatene, som kan reproduseres via de vedlagte Python-skriptene i prosjektrepoet. Studien er gjennomført i samsvar med retningslinjene for akademisk redelighet ved Høgskolen i Molde.
 
 # Referanser
 
