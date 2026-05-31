@@ -10,9 +10,9 @@ Ingen enkeltmodell dominerer alle horisonter:
 - **h = 8 uker:** Ensemblet (XGBoost + LightGBM med early stopping) er numerisk best med 10,85 NOK/kg (12,9 % MAPE), men heller ikke her er forskjellen fra SARIMA (11,07) signifikant (p = 0,93).
 - **h = 12 uker:** SARIMAX med naiv valutakursprognose er best med 13,15 NOK/kg (15,8 % MAPE), tett fulgt av LightGBM tunet (13,06). DM-testen finner ingen signifikant forskjell mellom de to (p = 0,98).
 
-Alle toppmodeller slår den naive baselines på samtlige horisonter; forbedringen er størst på h = 4 (3 % lavere MAPE enn naiv).
+Alle toppmodeller slår den naive baselines på samtlige horisonter; forbedringen er størst på h = 4 (~3 % relativ reduksjon, dvs. 0,3 prosentpoeng lavere MAPE enn naiv).
 
-To sentrale metodiske funn må understrekes: (1) Gauss-baserte 95 %-konfidensintervaller for SARIMA/SARIMAX underdekker konsekvent (~80 % faktisk vs. 95 % nominell), fordi treningsresidualene har fettede haler og uoppfanget sesongautokorrelasjon. (2) Ensemblet viser systematisk negativ bias (–2,2 til –2,9 NOK/kg) som kan spores til lakseprisboomet 2022–2023 — en regimeskiftperiode modellen ikke ble trent på å gjenkjenne.
+To sentrale metodiske funn må understrekes: (1) Gauss-baserte 95 %-konfidensintervaller for SARIMA/SARIMAX underdekker konsekvent (~80 % faktisk vs. 95 % nominell), fordi treningsresidualene har tunge haler og uoppfanget sesongautokorrelasjon. (2) Ensemblet viser systematisk negativ bias (–2,2 til –2,9 NOK/kg) som kan spores til lakseprisboomet 2022–2023 — en regimeskiftperiode modellen ikke ble trent på å gjenkjenne.
 
 Studien konkluderer med at statistiske og maskinlæringsbaserte tilnærminger presterer **statistisk likeverdig** på tvers av horisonter, og at valget mellom modellene i praksis bør styres av driftsegenskaper (tolkbarhet, kjøretid, vedlikehold) snarere enn marginale punktestimatforskjeller.
 # 1. Innledning
@@ -21,7 +21,7 @@ Studien konkluderer med at statistiske og maskinlæringsbaserte tilnærminger pr
 
 Norsk lakseoppdrett er en av landets største eksportnæringer, med en eksportverdi som i 2023 oversteg 100 milliarder kroner (SSB, 2024). Eksportprisen for fersk laks svinger kraftig fra uke til uke og er avgjørende for lønnsomheten hos både oppdrettere, eksportører og kjøpere. Aktører med eksponering mot spotmarkedet har behov for pålitelige prognoser på 4–12 ukers sikt for å planlegge slakting, logistikk og prissikring.
 
-Tidligere forskning viser at klassiske tidsseriemodeller som SARIMA ofte fungerer godt for kortsiktige prognoser i markeder med stabile sesongmønstre, mens maskinlæringsmodeller kan prestere bedre når tidsseriene inneholder ikke-lineære sammenhenger og strukturelle brudd. Til tross for den kommersielle viktigheten er offentlig tilgjengelig forskning på kortsiktig ukentlig lakseprisprognosering begrenset. Særlig finnes det få studier som kombinerer klassiske statistiske metoder med moderne gradientøkende tremodeller for dette spesifikke formålet.
+Tidligere forskning viser at klassiske tidsseriemodeller som SARIMA ofte fungerer godt for kortsiktige prognoser i markeder med stabile sesongmønstre (Box et al., 2015; Hyndman & Athanasopoulos, 2021), mens maskinlæringsmodeller kan prestere bedre når tidsseriene inneholder ikke-lineære sammenhenger og strukturelle brudd (Makridakis et al., 2020). Til tross for den kommersielle viktigheten er offentlig tilgjengelig forskning på kortsiktig ukentlig lakseprisprognosering begrenset. Særlig finnes det få studier som kombinerer klassiske statistiske metoder med moderne gradientøkende tremodeller for dette spesifikke formålet.
 
 Denne studien søker å fylle dette kunnskapshullet ved å integrere SSBs ukentlige statistikk med valutakurser og internasjonale prisindekser (FAO) i et felles prediksjonsrammeverk. Ved å sammenligne modellene på identiske data gjennom en krevende walk-forward-evaluering, bidrar studien til økt forståelse for hvilke arkitekturer som er mest robuste for ulike tidshorisonter i et volatilt råvaremarked.
 
@@ -44,7 +44,7 @@ Studien dekker ukentlige data fra 2010 til 2024 og evaluerer modellene på de si
 
 Rapporten inngår som avsluttende prosjektarbeid i emnet LOG650 (Logistikk og kunstig intelligens) ved Høgskolen i Molde (HiM).
 
-## 1.4 Relatert forskning
+## 1.4 Teori og litteratur
 
 ### Lakseprisens dynamikk og markedsstruktur
 
@@ -162,7 +162,7 @@ Sesongbasert autoregressiv integrert glidende gjennomsnitt (SARIMA) med orden (1
 
 Integrasjonsorden *d* = 1 er begrunnet med stasjonaritetstester på treningssettet (n = 741). Augmented Dickey-Fuller-testen (ADF) forkaster *ikke* nullhypotesen om enhetsrot på nivå (t = −1,21, p = 0,668), men forkaster den klart etter første differensiering (t = −7,57, p < 0,001). KPSS-testen bekrefter dette: på nivå forkastes stasjonaritetshypotesen (stat = 0,177, p ≈ 0,025), mens differensert serie ikke forkastes (stat = 0,046, p ≈ 0,10). Seriene er dermed I(1), og *d* = 1 er korrekt.
 
-Sesongdifferensieringsorden *D* = 1 er valgt fordi serien viser et klart, repeterende årssesongmønster (bekreftet av Ljung-Box ved lag 52, p ≪ 0,001 i treningsresidualene). AR- og MA-ordenene *p* = *q* = 1 og *P* = *Q* = 1 følger parsimoniprinsippet: de enkleste ordenene som fanger korttidsdynamikk og sesongstruktur. Modellen oppnår AIC = 3 221,4 og BIC = 3 243,7 på treningssettet.
+Sesongdifferensieringsorden *D* = 1 er valgt fordi serien viser et klart, repeterende årssesongmønster (bekreftet av Ljung-Box-testen (Ljung & Box, 1978) ved lag 52, p ≪ 0,001 i treningsresidualene). AR- og MA-ordenene *p* = *q* = 1 og *P* = *Q* = 1 følger parsimoniprinsippet: de enkleste ordenene som fanger korttidsdynamikk og sesongstruktur. Modellen oppnår AIC = 3 221,4 og BIC = 3 243,7 på treningssettet.
 
 SARIMAX er identisk bortsett fra at EUR/NOK og USD/NOK-kursene inkluderes som eksogene variabler.
 
@@ -219,7 +219,7 @@ For å avgjøre om observerte ytelsesforskjeller mellom modeller er statistisk m
 
 ## 2.6 Tolkning og forklarbarhet (SHAP)
 
-SHAP TreeExplainer (Lundberg & Lee, 2017) brukes til å kvantifisere featuere sin bidrag til LightGBM sine prediksjoner på testsettet. Verdiene angir gjennomsnittlig absolutt SHAP-verdi per feature og horisont.
+SHAP TreeExplainer (Lundberg & Lee, 2017) brukes til å kvantifisere featurenes bidrag til LightGBM sine prediksjoner på testsettet. Verdiene angir gjennomsnittlig absolutt SHAP-verdi per feature og horisont.
 
 ## 2.7 Metodisk kvalitet: Validitet og reliabilitet
 
@@ -234,7 +234,7 @@ For å sikre studiens vitenskapelige verdi er det gjort eksplisitte vurderinger 
 
 Tabell 3.1 viser MAE og MAPE for alle modeller på testperioden (104 uker). Beste modell per horisont er uthevet.
 
-![Figur 6: Sammenligning av MAE for de viktigste modellene over 4, 8 og 12 ukers horisont.](../../006 analyse/resultater/rapport_modellsammenligning.png)
+![Figur 1: Sammenligning av MAE for de viktigste modellene over 4, 8 og 12 ukers horisont.](../../006 analyse/resultater/rapport_modellsammenligning.png)
 
 **Tabell 3.1 – Prognoseytelse på testsettet (siste 104 uker)**
 
@@ -253,7 +253,7 @@ Tabell 3.1 viser MAE og MAPE for alle modeller på testperioden (104 uker). Best
 
 *Kilde: `resultater/sarima_metrikker.csv`, `resultater/sarimax_naiv_metrikker.csv`, `resultater/ml_ensemble.csv`.*
 
-![Figur 1: Sammenligning av faktisk laksepris mot ensemble-prognoser for testperioden.](../../006 analyse/resultater/ml_ensemble_prediksjon.png)
+![Figur 2: Sammenligning av faktisk laksepris mot ensemble-prognoser for testperioden.](../../006 analyse/resultater/ml_ensemble_prediksjon.png)
 
 **Tabell 3.1b – SARIMAX oracle vs. naiv valutakursprognose**
 
@@ -317,7 +317,7 @@ Gauss-baserte 95 %-konfidensintervaller fra SARIMA/SARIMAX underdekker systemati
 
 *Kilde: `resultater/sarima_ci_dekning.csv`, `resultater/usikkerhet_kalibrering.csv`.*
 
-![Figur 2: Kalibreringskurve som viser underdekking av konfidensintervaller på grunn av regimeskiftet.](../../006 analyse/resultater/usikkerhet_kalibrering.png)
+![Figur 3: Kalibreringskurve som viser underdekking av konfidensintervaller på grunn av regimeskiftet.](../../006 analyse/resultater/usikkerhet_kalibrering.png)
 
 Ingen metode når det nominelle 95 %-målet. Bootstrap-tilnærmingen reproduserer omtrent Gauss-dekning (~79–81 %) etter residualskalering, men tillegger ikke ny verdi. LightGBM kvantilregresjon underdekker kraftig (35–46 %) på grunn av regimeskiftet 2022–2023 (se seksjon 4.2).
 
@@ -336,11 +336,11 @@ Tabell 3.3 oppsummerer statistiske tester på in-sample treningsresidualene (689
 
 *Kilde: `resultater/sarima_residualdiagnostikk.csv`.*
 
-![Figur 3: Residualplot over tid for SARIMA-modellen som viser uoppfangede mønstre.](../../006 analyse/resultater/sarima_residualer.png)
+![Figur 4: Residualplot over tid for SARIMA-modellen som viser uoppfangede mønstre.](../../006 analyse/resultater/sarima_residualer.png)
 
-Ljung-Box-testen forkaster hvit-støy-hypotesen på alle lag (p < 0,01), med særlig sterk effekt ved lag 52. Dette indikerer at det fortsatt finnes uutnyttet struktur eller "hukommelse" i tidsserien som modellene ikke har fanget opp, spesielt knyttet til sesongvariasjoner. 
+Ljung-Box-testen (Ljung & Box, 1978) forkaster hvit-støy-hypotesen på alle lag (p < 0,01), med særlig sterk effekt ved lag 52. Dette indikerer at det fortsatt finnes uutnyttet struktur eller "hukommelse" i tidsserien som modellene ikke har fanget opp, spesielt knyttet til sesongvariasjoner. 
 
-Kurtose på ≈ 4,5 bekrefter at residualene har "fettede haler" sammenlignet med en normalfordeling. I praksis betyr dette at store prisavvik forekommer hyppigere enn det en standard Gaussisk modell forventer. Dette er hovedårsaken til at konfidensintervallene (se seksjon 3.2) underdekker de faktiske prisbevegelsene. For en logistikkplanlegger innebærer dette at man må ta høyde for større usikkerhet enn det de teoretiske intervallene antyder.
+Kurtose på ≈ 4,5 bekrefter at residualene har «tunge haler» sammenlignet med en normalfordeling. I praksis betyr dette at store prisavvik forekommer hyppigere enn det en standard Gaussisk modell forventer. Dette er hovedårsaken til at konfidensintervallene (se seksjon 3.2) underdekker de faktiske prisbevegelsene. For en logistikkplanlegger innebærer dette at man må ta høyde for større usikkerhet enn det de teoretiske intervallene antyder.
 
 ## 3.4 Bias-korreksjon
 
@@ -352,7 +352,7 @@ Kurtose på ≈ 4,5 bekrefter at residualene har "fettede haler" sammenlignet me
 | 8 | −2,92 | 10,85 | **10,60** | −0,25 |
 | 12 | −2,73 | 13,56 | 13,71 | +0,15 |
 
-![Figur 4: Effekt av bias-korreksjon på ensemble-modellen.](../../006 analyse/resultater/ml_avansert_bias_korr.png)
+![Figur 5: Effekt av bias-korreksjon på ensemble-modellen.](../../006 analyse/resultater/ml_avansert_bias_korr.png)
 
 Bias-korreksjon hjelper på h = 4 og h = 8, men øker MAE marginalt på h = 12 fordi feilene der er mer symmetrisk fordelt. Disse tallene er beregnet fra kjente test-residualer og kan ikke benyttes direkte i operativt bruk uten at bias estimeres på en separat kalibrerings- eller rolling-window-periode. Diskusjon av adaptiv bias-korreksjon og post-hoc ensemble-vekting er samlet i seksjon 4.5.
 
@@ -372,7 +372,7 @@ Tabell 3.5 viser de tre viktigste featurene per horisont fra LightGBM SHAP-analy
 
 *Kilde: `resultater/ml_avansert_shap_h4.csv`, `ml_avansert_shap_h8.csv`, `ml_avansert_shap_h12.csv`.*
 
-![Figur 5: SHAP summary plot for 4-ukers horisont (h=4).](../../006 analyse/resultater/ml_avansert_shap_h4.png)
+![Figur 6: SHAP summary plot for 4-ukers horisont (h=4).](../../006 analyse/resultater/ml_avansert_shap_h4.png)
 
 Lagfeaturer (`pris_lag_1`, `pris_lag_2`) dominerer korte horisonter, i tråd med at lakseprisen viser sterk korttidsautokorrelasjon — dagens pris er den beste indikatoren på morgendagens pris. På h = 12 overtar mer strukturelle variabler som eksportvolum på årsbasis (`volum_sum_52u`) og det sesongmessige cosinussignalet (`uke_cos`). Dette er konsistent med domeneforståelsen: markedsbalanse og sesongmønstre er viktigere drivere enn kortsiktige prissvingninger når man ser et kvartal frem i tid. Analysen bekrefter dermed at modellene fanger opp logiske økonomiske sammenhenger.
 
@@ -412,13 +412,13 @@ Disse funnene er ikke isolert til dette datasettet; regimeskiftsproblemet er en 
 
 95 %-konfidensintervallene fra SARIMA/SARIMAX dekker kun 79–82 % av de faktiske verdiene. Residualdiagnostikken gir en tosidig forklaring:
 
-1. **Fettede haler (kurtose ≈ 4,5):** Gauss-antagelsen underestimerer sannsynligheten for store avvik. De 2,5 % og 97,5 % kvantilene i treningsresidualene er smalere enn ±1,96σ tilsier.
+1. **Tunge haler (kurtose ≈ 4,5):** Gauss-antagelsen underestimerer sannsynligheten for store avvik. De 2,5 % og 97,5 % kvantilene i treningsresidualene er smalere enn ±1,96σ tilsier.
 
 2. **Uoppfanget sesongautokorrelasjon:** Ljung-Box-testene forkaster hvit-støy-hypotesen kraftig ved lag 52 (p ≪ 0,001). Modellen klarer ikke å absorbere all sesongstruktur i (1,1,1)(1,1,1)₅₂-ordenen. De gjenværende korrelerte residualene blåser opp den sanne usikkerheten utover hva Gauss-CI fanget.
 
-Bootstrap-skalering (seksjon 3.2) reproduserte omtrent samme dekning som Gauss, men uten forbedring. Dette skyldes at bootstrapen sampler fra de *samme* in-sample residualene — dermed arves de samme egenskapene (fettede haler og sesongkorrelasjon) inn i intervallestimatet.
+Bootstrap-skalering (seksjon 3.2) reproduserte omtrent samme dekning som Gauss, men uten forbedring. Dette skyldes at bootstrapen sampler fra de *samme* in-sample residualene — dermed arves de samme egenskapene (tunge haler og sesongkorrelasjon) inn i intervallestimatet.
 
-En reell forbedring av CI-kalibrerringen krever enten (a) en rikere residualmodell (t-fordeling, ikke-parametrisk), (b) conformal prediction-rammeverk, eller (c) å trekke residualene fra en lengere kalibrerings-periode som representerer fremtidsregimet.
+En reell forbedring av CI-kalibreringen krever enten (a) en rikere residualmodell (t-fordeling, ikke-parametrisk), (b) conformal prediction-rammeverk, eller (c) å trekke residualene fra en lengere kalibrerings-periode som representerer fremtidsregimet.
 
 ## 4.4 SARIMA-ordensvalgvalidering og refit-sensitivitet
 
@@ -484,7 +484,7 @@ En viktig metodisk innsikt er at SARIMAX med naiv random-walk-valutaprognose pre
 
 ## 5.2 Praktiske implikasjoner
 
-Studien viser at en kombinert modellstrategi kan gi forbedring på inntil 3 % i MAPE sammenlignet med naive estimater, men at de beste modellene er statistisk likeverdige. For sjømatnæringen innebærer dette at modellvalg bør styres av:
+Studien viser at en kombinert modellstrategi kan gi forbedring på inntil 0,3 prosentpoeng i MAPE (~3 % relativ reduksjon) sammenlignet med naive estimater, men at de beste modellene er statistisk likeverdige. For sjømatnæringen innebærer dette at modellvalg bør styres av:
 
 1. **Tolkbarhet:** SARIMA/SARIMAX er lettere å forklare for beslutningstagere enn ensemble-ML.
 2. **Robusthet mot overfitting:** Ensemble med early stopping er mer robust enn tunet XGBoost alene.
@@ -499,12 +499,28 @@ Det må understrekes at alle modeller underestimerer usikkerheten i perioder med
 Den største begrensningen i studien er modellenes sårbarhet for strukturelle regimeskift som ikke finnes i treningsdataene. Videre arbeid bør fokusere på:
 
 1.  **Regime-bevisst modellering:** Utforske modeller som automatisk kan oppdage og tilpasse seg skifter i markedsvolatilitet, for eksempel gjennom online learning eller adaptive ensemble-vekter.
-2.  **Konformal prediksjon:** Implementere rammeverk for *Conformal Prediction*. Dette er en teknikk som gir garantert dekningsgrad for usikkerhetsintervaller uten å hvile på urealistiske Gauss-antagelser om normalfordelte residualer. Dette ville løst problemet med systematisk underdekking identifisert i denne studien.
+2.  **Konformal prediksjon:** Implementere rammeverk for *Conformal Prediction* (Vovk et al., 2005). Dette er en teknikk som gir garantert dekningsgrad for usikkerhetsintervaller uten å hvile på urealistiske Gauss-antagelser om normalfordelte residualer. Dette ville løst problemet med systematisk underdekking identifisert i denne studien.
 3.  **Integrasjon av Fish Pool-futures:** Inkludere futures-priser fra laksebørsen Fish Pool som en ledende indikator (eksogen variabel). Siden disse prisene reflekterer markedets samlede forventninger frem i tid, vil de sannsynligvis kunne redusere bias i perioder med store prisskift.
 4.  **Utvide testperioden:** Med et lengere testsett (f.eks. 3–5 år) ville Diebold-Mariano-testen ha tilstrekkelig statistisk kraft til å avgjøre om horisontstyrt modellvalg er statistisk motivert.
 5.  **Flere datakilder:** Integrere mer detaljerte tilbudsdata som biomasseoversikter og fôrsalg for å styrke de lengre horisontene ytterligere.
 
+# Erklæring om bruk av kunstig intelligens
+
+I arbeidet med denne rapporten er generative KI-verktøy benyttet som støtte i følgende prosesser:
+
+- **Kodeassistanse:** GitHub Copilot og Claude (Anthropic) er brukt til å skrive og feilsøke Python-kode for datainnhenting, feature-engineering, modelltrening og visualisering.
+- **Litteratursøk og tekstutkast:** Claude er benyttet til å formulere utkast til enkeltavsnitt og til å identifisere relevante referanser, som deretter er vurdert og verifisert av forfatterne.
+- **Dataanalyse:** KI-verktøy er brukt til å tolke og diskutere statistiske resultater under forfatternes faglige veiledning.
+
+Alt faglig innhold, alle konklusjoner og all endelig tekst er skrevet, vurdert og godkjent av gruppemedlemmene. KI er utelukkende benyttet som hjelpeverktøy og har ikke erstattet forfatternes faglige vurderinger. Studien er gjennomført i samsvar med retningslinjene for akademisk redelighet ved Høgskolen i Molde og emnets krav slik de er beskrevet i Rekdal og Pettersen (2025).
+
 # Referanser
+
+## Kompendier
+
+**Pettersen, B.-I. & Rekdal, P. K.** (2026). *Kvantitative metoder i logistikk – implementert via KI* [Kompendium]. Høgskolen i Molde.
+
+**Rekdal, P. K. & Pettersen, B.-I.** (2025). *Vitenskapelig skriving – en praktisk innføring* [Kompendium]. Høgskolen i Molde.
 
 ## Datakilder
 
