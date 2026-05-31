@@ -31,7 +31,7 @@ AUTHORS = [
     "Morten Røgeberg",
 ]
 INSTITUTION = "Høgskolen i Molde"
-STUDY_PROGRAM = "Master i logistikk"
+STUDY_PROGRAM = ""
 COURSE = "LOG650 – Logistikk og kunstig intelligens"
 DATE = "Mai 2026"
 
@@ -137,7 +137,7 @@ def build_title_page(doc):
 
     doc.add_paragraph()
 
-    for line in (STUDY_PROGRAM, COURSE):
+    for line in filter(None, (STUDY_PROGRAM, COURSE)):
         p = doc.add_paragraph(line)
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for r in p.runs:
