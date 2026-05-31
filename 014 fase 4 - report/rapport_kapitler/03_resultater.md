@@ -61,7 +61,7 @@ Tabell 3.3 oppsummerer statistiske tester på in-sample treningsresidualene (689
 
 Ljung-Box-testen forkaster hvit-støy-hypotesen på alle lag (p < 0,01), med særlig sterk effekt ved lag 52. Dette indikerer gjenværende sesongautokorrelasjon som (1,1,1)(1,1,1)₅₂-ordenen ikke fanger fullt ut. Kurtose ≈ 4,5 bekrefter fettede haler relativt til normalfordelingen — den direkte årsaken til CI-underdekking.
 
-## 3.4 Bias-korreksjon og ensemble-vekting (Spor F)
+## 3.4 Bias-korreksjon og ensemble-vekting
 
 **Tabell 3.4 – Bias-korreksjon på ensemble-prediksjoner**
 

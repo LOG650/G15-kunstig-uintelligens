@@ -22,11 +22,21 @@
 
 **The pandas development team** (2024). *pandas – Python Data Analysis Library* (v2.x). Zenodo. https://doi.org/10.5281/zenodo.3509134
 
+## Domene- og markedsreferanser
+
+**Asche, F. & Bjørndal, T.** (2011). *The Economics of Salmon Aquaculture* (2. utg.). Wiley-Blackwell.
+
+**Dahl, R. E. & Oglend, A.** (2014). Fish price volatility. *Marine Resource Economics*, 29(1), 305–322. https://doi.org/10.1086/678925
+
+**Oglend, A.** (2013). Recent trends in salmon price volatility. *Aquaculture Economics & Management*, 17(3), 281–299. https://doi.org/10.1080/13657305.2013.812155
+
 ## Metode-referanser
 
 **Box, G. E. P., Jenkins, G. M., Reinsel, G. C. & Ljung, G. M.** (2015). *Time Series Analysis: Forecasting and Control* (5. utg.). Wiley.
 
 **Hyndman, R. J. & Athanasopoulos, G.** (2021). *Forecasting: Principles and Practice* (3. utg.). OTexts. URL: https://otexts.com/fpp3/
+
+**Makridakis, S., Spiliotis, E. & Assimakopoulos, V.** (2020). The M4 Competition: 100,000 time series and 61 forecasting methods. *International Journal of Forecasting*, 36(1), 54–74. https://doi.org/10.1016/j.ijforecast.2019.04.014
 
 **Ljung, G. M. & Box, G. E. P.** (1978). On a Measure of Lack of Fit in Time Series Models. *Biometrika*, 65(2), 297–303. https://doi.org/10.1093/biomet/65.2.297
 

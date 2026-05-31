@@ -53,7 +53,15 @@ Prognosegrunnlag: `pris(t + h) = pris(t)`. Tilsvarer ingen modelltilpasning og e
 
 Sesongbasert autoregressiv integrert glidende gjennomsnitt (SARIMA) med orden (1, 1, 1)(1, 1, 1)₅₂, tilpasset med maksimum likelihood-estimering via `statsmodels.tsa.statespace.SARIMAX`. Sesongperiode *m* = 52 reflekterer ukentlig data med et år som naturlig sesong.
 
+**Begrunnelse for ordensvalget:**
+
+Integrasjonsorden *d* = 1 er begrunnet med stasjonaritetstester på treningssettet (n = 741). Augmented Dickey-Fuller-testen (ADF) forkaster *ikke* nullhypotesen om enhetsrot på nivå (t = −1,21, p = 0,668), men forkaster den klart etter første differensiering (t = −7,57, p < 0,001). KPSS-testen bekrefter dette: på nivå forkastes stasjonaritetshypotesen (stat = 0,177, p ≈ 0,025), mens differensert serie ikke forkastes (stat = 0,046, p ≈ 0,10). Seriene er dermed I(1), og *d* = 1 er korrekt.
+
+Sesongdifferensieringsorden *D* = 1 er valgt fordi serien viser et klart, repeterende årssesongmønster (bekreftet av Ljung-Box ved lag 52, p ≪ 0,001 i treningsresidualene). AR- og MA-ordenene *p* = *q* = 1 og *P* = *Q* = 1 følger parsimoniprinsippet: de enkleste ordenene som fanger korttidsdynamikk og sesongstruktur. Modellen oppnår AIC = 3 221,4 og BIC = 3 243,7 på treningssettet.
+
 SARIMAX er identisk bortsett fra at EUR/USD-kursen inkluderes som eksogen variabel — tilpasset og prognositisert parallelt med prisvariabelen.
+
+I walk-forward-evalueringen benyttes de faktiske (realiserte) EUR/USD-verdiene for prognoseperioden (`exog_test`), ikke en fremoverrettet valutaprognose. Dette gir en optimistisk øvre grense for hva SARIMAX kan oppnå med perfekt valutainformasjon; i operativt bruk ville EUR/USD-kursen for de kommende 4–12 ukene måtte prognoseres separat, noe som vil introdusere ytterligere usikkerhet.
 
 Konfidensintervaller (95 %) leveres av SARIMAX-objektets `get_forecast()` med Gauss-antagelse.
 
@@ -72,7 +80,7 @@ Lik vekting (*w* = 0,5) brukes for h = 4. For h = 8 og h = 12 er optimale vekter
 
 ## 2.4 Usikkerhetskvantifisering
 
-I tillegg til Gauss-CI fra SARIMA/SARIMAX ble to empiriske metoder undersøkt (Spor G):
+I tillegg til Gauss-CI fra SARIMA/SARIMAX ble to empiriske metoder undersøkt:
 
 - **Bootstrap:** In-sample-residualer fra SARIMA/SARIMAX skaleres til prognosehorisonten og brukes til å simulere 2 000 fremtidsforløp. 2,5- og 97,5-persentilene gir empirisk CI.
 - **Kvantilregresjon (LightGBM):** LightGBM trenes separat for kvantilene 0,025, 0,5 og 0,975 (`objective="quantile"`) for direkte estimering av prediksjonsbånd.

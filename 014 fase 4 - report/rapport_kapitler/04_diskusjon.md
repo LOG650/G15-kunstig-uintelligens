@@ -32,7 +32,7 @@ En reell forbedring av CI-kalibrerringen krever enten (a) en rikere residualmode
 
 ## 4.4 SARIMA-ordensvalgvalidering og refit-sensitivitet
 
-SARIMA-orden (1,1,1)(1,1,1)₅₂ ble valgt manuelt. Refit-sensitivitetsanalysen (tabell 4.1) sammenlikner walk-forward-MAE for ulike refit-frekvenser — og gir et overraskende resultat: `refit=∞` (aldri refit, Spor A sin tilnærming) er best på alle tre horisonter.
+SARIMA-orden (1,1,1)(1,1,1)₅₂ ble valgt manuelt. Refit-sensitivitetsanalysen (tabell 4.1) sammenlikner walk-forward-MAE for ulike refit-frekvenser — og gir et overraskende resultat: `refit=∞` (aldri refit) er best på alle tre horisonter.
 
 **Tabell 4.1 – Refit-sensitivitet SARIMA(1,1,1)(1,1,1)₅₂**
 
@@ -41,7 +41,7 @@ SARIMA-orden (1,1,1)(1,1,1)₅₂ ble valgt manuelt. Refit-sensitivitetsanalysen
 | 4 | 8,517 | 11,281 | 13,459 | ~25 min |
 | 12 | 8,460 | 11,207 | 13,317 | ~12 min |
 | 26 | 8,451 | 11,163 | 13,299 | ~7,5 min |
-| **∞ (Spor A)** | **8,270** | **11,074** | **13,151** | **~3 min** |
+| **∞ (aldri refit)** | **8,270** | **11,074** | **13,151** | **~3 min** |
 
 Den intuitive forventningen er at hyppigere re-estimering gir bedre prediksjoner. Her er det motsatte tilfelle: re-estimering på data som inkluderer boomperioden 2022–2023 forringer parameterkvaliteten fordi modellen trekkes mot den ekstraordinære prisdynamikken og blir dårligere kalibrert for normalt markedsklima. Å holde parameterene faste fra pre-boom-trening er dermed mer robust. Dette er nok et uttrykk for det samme regimeskift-problemet som påvirker alle metoder i studien.
 

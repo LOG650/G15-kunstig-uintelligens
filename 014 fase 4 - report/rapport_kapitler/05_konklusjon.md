@@ -6,7 +6,7 @@
 
 **Ensemble med early stopping på mellomhorisonter.** XGBoost + LightGBM med early stopping og 40+ features vinner h = 8-konkurransen (10,85 NOK/kg). Early stopping er kritisk: ren hyperparameter-tuning uten regularisering overfitter og presterer dårligere enn naiv på korte horisonter.
 
-**FAO-imputation som feature.** Spor C sitt forward-fill av FAO-kvartalsverdier inn i ukentlig oppløsning tillater inclusion av den globale markedssignalet som ellers ville gitt 75 % manglende data. Modellene viser at FAO-informasjonen er nyttig på h = 4 og h = 8.
+**FAO-imputation som feature.** Forward-fill av FAO-kvartalsverdier inn i ukentlig oppløsning tillater inkludering av det globale markedssignalet som ellers ville gitt 75 % manglende data. Modellene viser at FAO-informasjonen er nyttig på h = 4 og h = 8.
 
 **SHAP-tolkning er konsistent med domeneforståelse.** At `pris_lag_1` og `pris_lag_2` dominerer korte horisonter, mens `volum_sum_52u` og sesongkomponenten (`uke_cos`) er viktigst på h = 12, er intuitivt forsvarlig: lakseprisen er autokorrelert kortsiktig, men markedsbalansen (tilbudsvolum) og sesongmønsteret bestemmer retningen over et kvartal.
 

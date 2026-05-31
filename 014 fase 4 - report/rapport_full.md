@@ -43,6 +43,25 @@ Som underspørsmål undersøkes:
 Studien dekker ukentlige data fra 2009 til 2024 og evaluerer modellene på de siste 104 ukene (~2 år) i en walk-forward-oppsett uten fremtidig informasjonslekasje. Det er ikke gjort markedsanalyse eller optimert handlingsstrategi — fokus er utelukkende på statistisk prognose.
 
 Rapporten inngår som avsluttende prosjektarbeid i emnet LOG650 (Logistikk og kunstig intelligens) ved Høgskolen i Molde (HiM).
+
+## 1.4 Relatert forskning
+
+### Lakseprisens dynamikk og markedsstruktur
+
+Norsk lakseoppdrett og prisdannelsen i dette markedet er grundig studert av Asche og medarbeidere. Asche og Bjørndal (2011) dokumenterer strukturen i atlantisk laksemarked, herunder prisintegrasjon mellom europeiske markeder og rollen til valutakurser som prisstimulator. Oglend (2013) viser at lakseprisvolatiliteten har økt over tid og identifiserer ikke-linearitet i prisdynamikken — funn som motiverer bruken av ikke-lineære maskinlæringsmodeller i tillegg til klassiske statistiske metoder. Dahl og Oglend (2014) finner at lakseprisen er integrert med EUR/USD-kursen, noe som er den empiriske begrunnelsen for å inkludere valutakurs som eksogen variabel i SARIMAX-spesifikasjonen i denne studien.
+
+### SARIMA og statistiske tidsseriemodeller for råvarer
+
+Box, Jenkins, Reinsel og Ljung (2015) er standardverket for SARIMA-modellering og etablerer rammeverket denne studien bygger på. Hyndman og Athanasopoulos (2021) gir en oppdatert gjennomgang av prognosemetoder og konkluderer at sesongmodeller med differensiering (SARIMA-familien) generelt presterer godt for råvarepriser med stabile sesongmønstre, men at de er sårbare for strukturelle brudd. Begge disse referansene støtter valg av SARIMA som statistisk referansemodell i studien.
+
+### Gradientøkende tremodeller og ensemble-metoder for tidsserier
+
+Chen og Guestrin (2016) introduserte XGBoost, og Ke et al. (2017) introduserte LightGBM, begge med dokumentert overlegen ytelse på tabelldata sammenlignet med dypere nevrale nett ved moderate datasettsstørrelser. For tidsserieprognose spesifikt fant Makridakis, Spiliotis og Assimakopoulos (2020) i den store M4-konkurransen (100 000 tidsserier, 61 metoder) at kombinasjonsmodeller konsekvent overgår enkeltmodeller, og at hybridmodeller som kombinerer statistiske og maskinlæringsbaserte metoder hevder seg blant de beste. Dette er en direkte motivasjon for ensemble-tilnærmingen i denne studien.
+
+### Forskningsgap
+
+Til tross for den kommersielle viktigheten av lakseprognosering er litteraturen på *ukentlig* lakseprognosering med maskinlæringsbaserte metoder begrenset. Eksisterende studier fokuserer primært på månedlig eller kvartalsvis prisdynamikk og markedsintegrasjon (Asche et al.), eller på bredere råvaremarkeder (Makridakis et al.). Kombinasjonen av SSBs ukentlige eksportdata, FAO-prisindeks og gradientøkende ensembler i en walk-forward-evaluering for norsk laks er ikke tidligere dokumentert i den åpent tilgjengelige litteraturen, og utgjør dette studiet sitt empiriske bidrag.
+
 # 2. Metode
 
 ## 2.1 Data
@@ -98,7 +117,15 @@ Prognosegrunnlag: `pris(t + h) = pris(t)`. Tilsvarer ingen modelltilpasning og e
 
 Sesongbasert autoregressiv integrert glidende gjennomsnitt (SARIMA) med orden (1, 1, 1)(1, 1, 1)₅₂, tilpasset med maksimum likelihood-estimering via `statsmodels.tsa.statespace.SARIMAX`. Sesongperiode *m* = 52 reflekterer ukentlig data med et år som naturlig sesong.
 
+**Begrunnelse for ordensvalget:**
+
+Integrasjonsorden *d* = 1 er begrunnet med stasjonaritetstester på treningssettet (n = 741). Augmented Dickey-Fuller-testen (ADF) forkaster *ikke* nullhypotesen om enhetsrot på nivå (t = −1,21, p = 0,668), men forkaster den klart etter første differensiering (t = −7,57, p < 0,001). KPSS-testen bekrefter dette: på nivå forkastes stasjonaritetshypotesen (stat = 0,177, p ≈ 0,025), mens differensert serie ikke forkastes (stat = 0,046, p ≈ 0,10). Seriene er dermed I(1), og *d* = 1 er korrekt.
+
+Sesongdifferensieringsorden *D* = 1 er valgt fordi serien viser et klart, repeterende årssesongmønster (bekreftet av Ljung-Box ved lag 52, p ≪ 0,001 i treningsresidualene). AR- og MA-ordenene *p* = *q* = 1 og *P* = *Q* = 1 følger parsimoniprinsippet: de enkleste ordenene som fanger korttidsdynamikk og sesongstruktur. Modellen oppnår AIC = 3 221,4 og BIC = 3 243,7 på treningssettet.
+
 SARIMAX er identisk bortsett fra at EUR/USD-kursen inkluderes som eksogen variabel — tilpasset og prognositisert parallelt med prisvariabelen.
+
+I walk-forward-evalueringen benyttes de faktiske (realiserte) EUR/USD-verdiene for prognoseperioden (`exog_test`), ikke en fremoverrettet valutaprognose. Dette gir en optimistisk øvre grense for hva SARIMAX kan oppnå med perfekt valutainformasjon; i operativt bruk ville EUR/USD-kursen for de kommende 4–12 ukene måtte prognoseres separat, noe som vil introdusere ytterligere usikkerhet.
 
 Konfidensintervaller (95 %) leveres av SARIMAX-objektets `get_forecast()` med Gauss-antagelse.
 
@@ -117,7 +144,7 @@ Lik vekting (*w* = 0,5) brukes for h = 4. For h = 8 og h = 12 er optimale vekter
 
 ## 2.4 Usikkerhetskvantifisering
 
-I tillegg til Gauss-CI fra SARIMA/SARIMAX ble to empiriske metoder undersøkt (Spor G):
+I tillegg til Gauss-CI fra SARIMA/SARIMAX ble to empiriske metoder undersøkt:
 
 - **Bootstrap:** In-sample-residualer fra SARIMA/SARIMAX skaleres til prognosehorisonten og brukes til å simulere 2 000 fremtidsforløp. 2,5- og 97,5-persentilene gir empirisk CI.
 - **Kvantilregresjon (LightGBM):** LightGBM trenes separat for kvantilene 0,025, 0,5 og 0,975 (`objective="quantile"`) for direkte estimering av prediksjonsbånd.
@@ -208,7 +235,7 @@ Ljung-Box-testen forkaster hvit-støy-hypotesen på alle lag (p < 0,01), med sæ
 
 Kurtose på ≈ 4,5 bekrefter at residualene har "fettede haler" sammenlignet med en normalfordeling. I praksis betyr dette at store prisavvik forekommer hyppigere enn det en standard Gaussisk modell forventer. Dette er hovedårsaken til at konfidensintervallene (se seksjon 3.2) underdekker de faktiske prisbevegelsene. For en logistikkplanlegger innebærer dette at man må ta høyde for større usikkerhet enn det de teoretiske intervallene antyder.
 
-## 3.4 Bias-korreksjon og ensemble-vekting (Spor F)
+## 3.4 Bias-korreksjon og ensemble-vekting
 
 **Tabell 3.4 – Bias-korreksjon på ensemble-prediksjoner**
 
@@ -299,7 +326,7 @@ En reell forbedring av CI-kalibrerringen krever enten (a) en rikere residualmode
 
 ## 4.4 SARIMA-ordensvalgvalidering og refit-sensitivitet
 
-SARIMA-orden (1,1,1)(1,1,1)₅₂ ble valgt manuelt. Refit-sensitivitetsanalysen (tabell 4.1) sammenlikner walk-forward-MAE for ulike refit-frekvenser — og gir et overraskende resultat: `refit=∞` (aldri refit, Spor A sin tilnærming) er best på alle tre horisonter.
+SARIMA-orden (1,1,1)(1,1,1)₅₂ ble valgt manuelt. Refit-sensitivitetsanalysen (tabell 4.1) sammenlikner walk-forward-MAE for ulike refit-frekvenser — og gir et overraskende resultat: `refit=∞` (aldri refit) er best på alle tre horisonter.
 
 **Tabell 4.1 – Refit-sensitivitet SARIMA(1,1,1)(1,1,1)₅₂**
 
@@ -308,7 +335,7 @@ SARIMA-orden (1,1,1)(1,1,1)₅₂ ble valgt manuelt. Refit-sensitivitetsanalysen
 | 4 | 8,517 | 11,281 | 13,459 | ~25 min |
 | 12 | 8,460 | 11,207 | 13,317 | ~12 min |
 | 26 | 8,451 | 11,163 | 13,299 | ~7,5 min |
-| **∞ (Spor A)** | **8,270** | **11,074** | **13,151** | **~3 min** |
+| **∞ (aldri refit)** | **8,270** | **11,074** | **13,151** | **~3 min** |
 
 Den intuitive forventningen er at hyppigere re-estimering gir bedre prediksjoner. Her er det motsatte tilfelle: re-estimering på data som inkluderer boomperioden 2022–2023 forringer parameterkvaliteten fordi modellen trekkes mot den ekstraordinære prisdynamikken og blir dårligere kalibrert for normalt markedsklima. Å holde parameterene faste fra pre-boom-trening er dermed mer robust. Dette er nok et uttrykk for det samme regimeskift-problemet som påvirker alle metoder i studien.
 
@@ -375,13 +402,23 @@ Den største begrensningen i studien er modellenes sårbarhet for strukturelle r
 
 **The pandas development team** (2024). *pandas – Python Data Analysis Library* (v2.x). Zenodo. https://doi.org/10.5281/zenodo.3509134
 
-## Metode-referanser
+## Domene- og markedsreferanser
+
+**Asche, F. & Bjørndal, T.** (2011). *The Economics of Salmon Aquaculture* (2. utg.). Wiley-Blackwell.
 
 **Asche, F., Oglend, A. & Tveteras, S.** (2015). Fish Pool prices as forecasts for Norwegian salmon prices. *Marine Resource Economics*, 30(3), 321–333.
+
+**Dahl, R. E. & Oglend, A.** (2014). Fish price volatility. *Marine Resource Economics*, 29(1), 305–322. https://doi.org/10.1086/678925
+
+**Oglend, A.** (2013). Recent trends in salmon price volatility. *Aquaculture Economics & Management*, 17(3), 281–299. https://doi.org/10.1080/13657305.2013.812155
+
+## Metode-referanser
 
 **Box, G. E. P., Jenkins, G. M., Reinsel, G. C. & Ljung, G. M.** (2015). *Time Series Analysis: Forecasting and Control* (5. utg.). Wiley.
 
 **Hyndman, R. J. & Athanasopoulos, G.** (2021). *Forecasting: Principles and Practice* (3. utg.). OTexts. URL: https://otexts.com/fpp3/
+
+**Makridakis, S., Spiliotis, E. & Assimakopoulos, V.** (2020). The M4 Competition: 100,000 time series and 61 forecasting methods. *International Journal of Forecasting*, 36(1), 54–74. https://doi.org/10.1016/j.ijforecast.2019.04.014
 
 **Ljung, G. M. & Box, G. E. P.** (1978). On a Measure of Lack of Fit in Time Series Models. *Biometrika*, 65(2), 297–303. https://doi.org/10.1093/biomet/65.2.297
 
