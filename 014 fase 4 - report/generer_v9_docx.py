@@ -20,7 +20,7 @@ REPORT_DIR = Path(__file__).parent
 ANALYSE_RESULTATER = REPORT_DIR.parent / "006 analyse" / "resultater"
 V8_FILE = REPORT_DIR / "EndeligForskningsrapport G15 v8.docx"
 MD_FILE = REPORT_DIR / "rapport_full.md"
-OUT_FILE = REPORT_DIR / "EndeligForskningsrapport_G15_v9.docx"
+OUT_FILE = REPORT_DIR / "EndeligForskningsrapport_G15_v10.docx"
 
 TITLE_LINE1 = "Maskinlæringsbasert prognose av norsk lakseksportpris"
 TITLE_LINE2 = "4–12 uker frem i tid"

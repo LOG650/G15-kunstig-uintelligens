@@ -512,15 +512,9 @@ I arbeidet med denne rapporten er generative KI-verktøy benyttet som støtte i 
 - **Litteratursøk og tekstutkast:** Claude er benyttet til å formulere utkast til enkeltavsnitt og til å identifisere relevante referanser, som deretter er vurdert og verifisert av forfatterne.
 - **Dataanalyse:** KI-verktøy er brukt til å tolke og diskutere statistiske resultater under forfatternes faglige veiledning.
 
-Alt faglig innhold, alle konklusjoner og all endelig tekst er skrevet, vurdert og godkjent av gruppemedlemmene. KI er utelukkende benyttet som hjelpeverktøy og har ikke erstattet forfatternes faglige vurderinger. Studien er gjennomført i samsvar med retningslinjene for akademisk redelighet ved Høgskolen i Molde og emnets krav slik de er beskrevet i Rekdal og Pettersen (2025).
+Alt faglig innhold, alle konklusjoner og all endelig tekst er skrevet, vurdert og godkjent av gruppemedlemmene. KI er utelukkende benyttet som hjelpeverktøy og har ikke erstattet forfatternes faglige vurderinger. Studien er gjennomført i samsvar med retningslinjene for akademisk redelighet ved Høgskolen i Molde.
 
 # Referanser
-
-## Kompendier
-
-**Pettersen, B.-I. & Rekdal, P. K.** (2026). *Kvantitative metoder i logistikk – implementert via KI* [Kompendium]. Høgskolen i Molde.
-
-**Rekdal, P. K. & Pettersen, B.-I.** (2025). *Vitenskapelig skriving – en praktisk innføring* [Kompendium]. Høgskolen i Molde.
 
 ## Datakilder
 
