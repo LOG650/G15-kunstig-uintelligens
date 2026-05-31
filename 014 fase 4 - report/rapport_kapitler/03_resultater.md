@@ -28,6 +28,19 @@ Tabell 3.1 viser MAE og MAPE for alle modeller på testperioden (104 uker). Best
 - På h = 12 dominerer SARIMAX med 12,93 NOK/kg mot LightGBM tunet (13,06) og LightGBM+ES (13,24). Ensemble-averaging skader her fordi XGBoost+ES er svakere (15,31).
 - XGBoost-tuning alene (uten early stopping) er svakere enn naiv på h = 4 og h = 8 — hyperparameter-tuning uten regularisering overfitter.
 
+**Tabell 3.1b – RMSE for utvalgte modeller (NOK/kg)**
+
+| Modell | h=4 RMSE | h=8 RMSE | h=12 RMSE |
+|---|---:|---:|---:|
+| Naiv (`pris(t-h)`) | 16,67 | 22,50 | 25,60 |
+| SARIMA (rullende) | 11,01 | 15,01 | 17,40 |
+| SARIMAX (rullende, EUR/USD) | 11,19 | 15,00 | 17,20 |
+| XGBoost + early stopping | 10,99 | 13,70 | 18,54 |
+| LightGBM + early stopping | 11,20 | 14,70 | **16,93** |
+| **Ensemble** (XGB+ES + LGBM+ES) | **10,72** | **13,69** | 17,15 |
+
+RMSE straffer store feil hardere enn MAE og gir en annen rangering på to horisonter: på h = 4 er ensemblet (10,72) best på RMSE til tross for at SARIMA vinner på MAE (8,27 vs. 8,33), og på h = 12 er LightGBM+ES (16,93) best på RMSE mens SARIMAX vinner på MAE. Dette indikerer at SARIMA har noe lavere gjennomsnittsfeil, men at ensemblet unngår de virkelig store enkeltfeilene bedre på kort horisont.
+
 ## 3.2 Kalibrering av konfidensintervaller
 
 Gauss-baserte 95 %-konfidensintervaller fra SARIMA/SARIMAX underdekker systematisk. Tabell 3.2 viser empirisk dekning og gjennomsnittlig bredde.

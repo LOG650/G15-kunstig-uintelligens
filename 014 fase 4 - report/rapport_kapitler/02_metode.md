@@ -13,6 +13,8 @@ Ukentlig gjennomsnittlig eksportpris for fersk hel norsk laks (NOK/kg) er hentet
 | Norges Bank | EUR/USD spot | Daglig | Ukentlig gjennomsnitt |
 | FAO | Fiskeriprisindeks (akvakultur) | Kvartalsvis | Forward-fill til ukentlig; `fao_imputert`-flagg markerer imputerte verdier |
 
+**Merknad om FAO-imputasjon:** Forward-fill gir identisk verdi for alle ~13 påfølgende uker innenfor hvert kvartal. Dette introduserer kunstig autokorrelasjon i `fao_index_raw`-featuret: ML-modellene «ser» en feature som er konstant i 13 uker og deretter hopper til et nytt nivå. Effekten er at modellene kan lære kvartalsskiftsignalet heller enn den underliggende prisutviklingen. `fao_imputert`-flagget gjør det mulig å kontrollere for dette, men ingen eksplisitt korreksjon er gjort utover flaggingen. SHAP-analysen (seksjon 3.5) bekrefter indirekte at FAO-featuret har lavere viktighet enn lagfeaturer på alle horisonter, noe som tyder på at effekten er begrenset i praksis.
+
 ### Tidsseriekarakteristika og deskriptiv statistikk
 
 Tabell 2.1 oppsummerer de viktigste statistiske egenskapene til eksportprisserien over hele analyseperioden (n = 743 ukentlige observasjoner, 2010–2024).

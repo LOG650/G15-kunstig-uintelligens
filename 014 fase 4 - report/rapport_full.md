@@ -77,6 +77,8 @@ Ukentlig gjennomsnittlig eksportpris for fersk hel norsk laks (NOK/kg) er hentet
 | Norges Bank | EUR/USD spot | Daglig | Ukentlig gjennomsnitt |
 | FAO | Fiskeriprisindeks (akvakultur) | Kvartalsvis | Forward-fill til ukentlig; `fao_imputert`-flagg markerer imputerte verdier |
 
+**Merknad om FAO-imputasjon:** Forward-fill gir identisk verdi for alle ~13 påfølgende uker innenfor hvert kvartal. Dette introduserer kunstig autokorrelasjon i `fao_index_raw`-featuret: ML-modellene «ser» en feature som er konstant i 13 uker og deretter hopper til et nytt nivå. Effekten er at modellene kan lære kvartalsskiftsignalet heller enn den underliggende prisutviklingen. `fao_imputert`-flagget gjør det mulig å kontrollere for dette, men ingen eksplisitt korreksjon er gjort utover flaggingen. SHAP-analysen (seksjon 3.5) bekrefter indirekte at FAO-featuret har lavere viktighet enn lagfeaturer på alle horisonter, noe som tyder på at effekten er begrenset i praksis.
+
 ### Tidsseriekarakteristika og deskriptiv statistikk
 
 Tabell 2.1 oppsummerer de viktigste statistiske egenskapene til eksportprisserien over hele analyseperioden (n = 743 ukentlige observasjoner, 2010–2024).
@@ -214,6 +216,19 @@ Tabell 3.1 viser MAE og MAPE for alle modeller på testperioden (104 uker). Best
 - Ensemblet er numerisk best på h = 8 med 0,03 NOK/kg over XGBoost+ES — marginalt og uten formell signifikanstest.
 - På h = 12 dominerer SARIMAX med 12,93 NOK/kg mot LightGBM tunet (13,06) og LightGBM+ES (13,24). Ensemble-averaging skader her fordi XGBoost+ES er svakere (15,31).
 - XGBoost-tuning alene (uten early stopping) er svakere enn naiv på h = 4 og h = 8 — hyperparameter-tuning uten regularisering overfitter.
+
+**Tabell 3.1b – RMSE for utvalgte modeller (NOK/kg)**
+
+| Modell | h=4 RMSE | h=8 RMSE | h=12 RMSE |
+|---|---:|---:|---:|
+| Naiv (`pris(t-h)`) | 16,67 | 22,50 | 25,60 |
+| SARIMA (rullende) | 11,01 | 15,01 | 17,40 |
+| SARIMAX (rullende, EUR/USD) | 11,19 | 15,00 | 17,20 |
+| XGBoost + early stopping | 10,99 | 13,70 | 18,54 |
+| LightGBM + early stopping | 11,20 | 14,70 | **16,93** |
+| **Ensemble** (XGB+ES + LGBM+ES) | **10,72** | **13,69** | 17,15 |
+
+RMSE straffer store feil hardere enn MAE og gir en annen rangering på to horisonter: på h = 4 er ensemblet (10,72) best på RMSE til tross for at SARIMA vinner på MAE (8,27 vs. 8,33), og på h = 12 er LightGBM+ES (16,93) best på RMSE mens SARIMAX vinner på MAE. Dette indikerer at SARIMA har noe lavere gjennomsnittsfeil, men at ensemblet unngår de virkelig store enkeltfeilene bedre på kort horisont.
 
 ## 3.2 Kalibrering av konfidensintervaller
 
