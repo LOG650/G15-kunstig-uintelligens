@@ -2,24 +2,28 @@
 """
 generer_v9_docx.py
 Generates EndeligForskningsrapport_G15_v9.docx from rapport_full.md.
-Adds title page, TOC field, and converts all markdown content to Word formatting.
+Opens v8.docx as base to inherit all heading/paragraph styles, clears body,
+then renders the updated markdown content. Prepends title page + TOC.
 """
 
 import re
 import sys
+from copy import deepcopy
 from pathlib import Path
 from docx import Document
-from docx.shared import Pt, Cm, RGBColor, Inches
+from docx.shared import Pt, Cm, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 REPORT_DIR = Path(__file__).parent
 ANALYSE_RESULTATER = REPORT_DIR.parent / "006 analyse" / "resultater"
+V8_FILE = REPORT_DIR / "EndeligForskningsrapport G15 v8.docx"
 MD_FILE = REPORT_DIR / "rapport_full.md"
 OUT_FILE = REPORT_DIR / "EndeligForskningsrapport_G15_v9.docx"
 
-TITLE = "Maskinlæringsbasert prognose av norsk lakseksportpris\n4–12 uker frem i tid"
+TITLE_LINE1 = "Maskinlæringsbasert prognose av norsk lakseksportpris"
+TITLE_LINE2 = "4–12 uker frem i tid"
 AUTHORS = [
     "Alexander Francke Lindløkken",
     "Joakim Bekkevik Gåseland",
@@ -31,7 +35,7 @@ STUDY_PROGRAM = "Master i logistikk"
 COURSE = "LOG650 – Logistikk og kunstig intelligens"
 DATE = "Mai 2026"
 
-# Map markdown image alt-text paths to local files
+# Map trailing filename → local path for images
 IMAGE_MAP = {
     "rapport_modellsammenligning.png": REPORT_DIR / "rapport_modellsammenligning.png",
     "ml_ensemble_prediksjon.png": REPORT_DIR / "ml_ensemble_prediksjon.png",
@@ -43,22 +47,8 @@ IMAGE_MAP = {
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# DOM helpers
 # ---------------------------------------------------------------------------
-
-def add_page_break(doc):
-    p = doc.add_paragraph()
-    run = p.add_run()
-    run.add_break(docx_break_type())
-    return p
-
-
-def docx_break_type():
-    from docx.oxml import OxmlElement
-    br = OxmlElement("w:br")
-    br.set(qn("w:type"), "page")
-    return br
-
 
 def insert_page_break(doc):
     para = doc.add_paragraph()
@@ -66,10 +56,10 @@ def insert_page_break(doc):
     br = OxmlElement("w:br")
     br.set(qn("w:type"), "page")
     run._r.append(br)
+    return para
 
 
 def add_toc_field(doc):
-    """Insert a Word TOC field that auto-updates when opened in Word."""
     para = doc.add_paragraph()
     para.style = doc.styles["Normal"]
     run = para.add_run()
@@ -81,33 +71,30 @@ def add_toc_field(doc):
     fldChar2 = OxmlElement("w:fldChar")
     fldChar2.set(qn("w:fldCharType"), "separate")
     placeholder = OxmlElement("w:t")
-    placeholder.text = "[Oppdater innholdsfortegnelsen ved å høyreklikke og velge «Oppdater felt»]"
+    placeholder.text = (
+        "[Høyreklikk og velg «Oppdater felt» for å generere innholdsfortegnelsen]"
+    )
     fldChar3 = OxmlElement("w:fldChar")
     fldChar3.set(qn("w:fldCharType"), "end")
     run._r.extend([fldChar1, instrText, fldChar2, placeholder, fldChar3])
     return para
 
 
-def set_paragraph_font(para, size_pt=12, bold=False, italic=False, color=None):
-    for run in para.runs:
-        run.font.size = Pt(size_pt)
-        run.font.bold = bold
-        run.font.italic = italic
-        if color:
-            run.font.color.rgb = RGBColor(*color)
+# ---------------------------------------------------------------------------
+# Inline markdown → runs
+# ---------------------------------------------------------------------------
 
-
-def apply_inline_formatting(para, text):
-    """Parse **bold**, *italic*, `code` and plain text, add runs."""
-    pattern = re.compile(r"(\*\*.*?\*\*|\*.*?\*|`.*?`)")
-    parts = pattern.split(text)
-    for part in parts:
+def apply_inline(para, text):
+    """Parse **bold**, *italic*, `code` and add runs to para."""
+    # Handle escaped markdown in table cells / headings
+    pattern = re.compile(r"(\*\*.*?\*\*|\*[^*]+\*|`[^`]+`)")
+    for part in pattern.split(text):
+        if not part:
+            continue
         if part.startswith("**") and part.endswith("**"):
-            run = para.add_run(part[2:-2])
-            run.bold = True
+            para.add_run(part[2:-2]).bold = True
         elif part.startswith("*") and part.endswith("*"):
-            run = para.add_run(part[1:-1])
-            run.italic = True
+            para.add_run(part[1:-1]).italic = True
         elif part.startswith("`") and part.endswith("`"):
             run = para.add_run(part[1:-1])
             run.font.name = "Courier New"
@@ -121,54 +108,48 @@ def apply_inline_formatting(para, text):
 # ---------------------------------------------------------------------------
 
 def build_title_page(doc):
-    doc.add_paragraph()
-    doc.add_paragraph()
-    doc.add_paragraph()
+    for _ in range(4):
+        doc.add_paragraph()
 
-    # Institution
     p = doc.add_paragraph(INSTITUTION)
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    for run in p.runs:
-        run.font.size = Pt(14)
-        run.font.bold = True
+    for r in p.runs:
+        r.bold = True
+        r.font.size = Pt(14)
 
     doc.add_paragraph()
 
-    # Title
-    for line in TITLE.split("\n"):
+    for line in (TITLE_LINE1, TITLE_LINE2):
         p = doc.add_paragraph(line)
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in p.runs:
-            run.font.size = Pt(20)
-            run.font.bold = True
+        for r in p.runs:
+            r.bold = True
+            r.font.size = Pt(20)
 
     doc.add_paragraph()
     doc.add_paragraph()
 
-    # Authors (all equal, no leader role)
     for author in AUTHORS:
         p = doc.add_paragraph(author)
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in p.runs:
-            run.font.size = Pt(13)
+        for r in p.runs:
+            r.font.size = Pt(13)
 
     doc.add_paragraph()
 
-    # Study program and course
-    for line in [STUDY_PROGRAM, COURSE]:
+    for line in (STUDY_PROGRAM, COURSE):
         p = doc.add_paragraph(line)
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in p.runs:
-            run.font.size = Pt(12)
+        for r in p.runs:
+            r.font.size = Pt(12)
 
     doc.add_paragraph()
 
-    # Date
     p = doc.add_paragraph(DATE)
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    for run in p.runs:
-        run.font.size = Pt(12)
-        run.font.italic = True
+    for r in p.runs:
+        r.italic = True
+        r.font.size = Pt(12)
 
     insert_page_break(doc)
 
@@ -178,26 +159,21 @@ def build_title_page(doc):
 # ---------------------------------------------------------------------------
 
 def build_toc_page(doc):
-    p = doc.add_heading("Innholdsfortegnelse", level=1)
-    p.clear()
-    run = p.add_run("Innholdsfortegnelse")
-    run.font.size = Pt(16)
-    run.font.bold = True
+    doc.add_heading("Innholdsfortegnelse", level=1)
     doc.add_paragraph()
     add_toc_field(doc)
     insert_page_break(doc)
 
 
 # ---------------------------------------------------------------------------
-# Markdown table parser
+# Table renderer
 # ---------------------------------------------------------------------------
 
 def parse_md_table(lines):
-    """Parse markdown table lines into list-of-lists (rows)."""
     rows = []
     for line in lines:
         if re.match(r"^\s*\|[-: |]+\|\s*$", line):
-            continue  # separator row
+            continue
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         rows.append(cells)
     return rows
@@ -208,108 +184,79 @@ def add_md_table(doc, table_lines):
     if not rows:
         return
     col_count = max(len(r) for r in rows)
-    # Pad short rows
     rows = [r + [""] * (col_count - len(r)) for r in rows]
-
     table = doc.add_table(rows=len(rows), cols=col_count)
-    table.style = "Table Grid"
-
+    table.style = "Normal Table"
     for i, row_data in enumerate(rows):
-        row = table.rows[i]
         for j, cell_text in enumerate(row_data):
-            cell = row.cells[j]
+            cell = table.rows[i].cells[j]
+            # Strip markdown bold markers for plain cell text
             clean = re.sub(r"\*\*(.*?)\*\*", r"\1", cell_text)
             clean = re.sub(r"\*(.*?)\*", r"\1", clean)
             clean = re.sub(r"`(.*?)`", r"\1", clean)
             cell.text = clean
             if i == 0:
                 for run in cell.paragraphs[0].runs:
-                    run.font.bold = True
-            for para in cell.paragraphs:
-                para.alignment = WD_ALIGN_PARAGRAPH.LEFT
-
+                    run.bold = True
     doc.add_paragraph()
 
 
 # ---------------------------------------------------------------------------
-# Image insertion
+# Image renderer
 # ---------------------------------------------------------------------------
 
-def resolve_image(path_in_md):
-    """Try to find the image file from the markdown path."""
-    filename = Path(path_in_md).name
+def resolve_image(path_str):
+    filename = Path(path_str).name
     if filename in IMAGE_MAP and IMAGE_MAP[filename].exists():
         return IMAGE_MAP[filename]
-    # Try direct in report dir
-    candidate = REPORT_DIR / filename
-    if candidate.exists():
-        return candidate
-    # Try in analyse resultater
-    candidate2 = ANALYSE_RESULTATER / filename
-    if candidate2.exists():
-        return candidate2
+    for candidate in (REPORT_DIR / filename, ANALYSE_RESULTATER / filename):
+        if candidate.exists():
+            return candidate
     return None
 
 
 def add_image_para(doc, alt_text, img_path):
-    """Add image with caption below."""
     img_file = resolve_image(img_path)
+    para = doc.add_paragraph()
+    para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     if img_file and img_file.exists():
         try:
-            para = doc.add_paragraph()
-            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            run = para.add_run()
-            run.add_picture(str(img_file), width=Inches(5.5))
+            para.add_run().add_picture(str(img_file), width=Inches(5.5))
         except Exception as e:
-            print(f"  [WARN] Could not insert image {img_file}: {e}")
-            p = doc.add_paragraph(f"[Figur: {alt_text}]")
-            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            print(f"  [WARN] {img_file.name}: {e}")
+            para.add_run(f"[Figur: {alt_text}]").italic = True
     else:
-        p = doc.add_paragraph(f"[Figur: {alt_text}]")
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in p.runs:
-            run.italic = True
-        print(f"  [WARN] Image not found: {img_path}")
-
-    # Caption
+        para.add_run(f"[Figur: {alt_text}]").italic = True
+        print(f"  [WARN] Bildefil ikke funnet: {img_path}")
     caption = doc.add_paragraph(alt_text)
     caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    for run in caption.runs:
-        run.italic = True
-        run.font.size = Pt(10)
+    for r in caption.runs:
+        r.italic = True
+        r.font.size = Pt(10)
     doc.add_paragraph()
 
 
 # ---------------------------------------------------------------------------
-# Block quote / decision guide
+# Blockquote renderer (decision guide)
 # ---------------------------------------------------------------------------
 
 def add_blockquote(doc, lines):
-    """Render a blockquote block (the decision guide)."""
     for line in lines:
         stripped = line.lstrip("> ").strip()
         if not stripped:
             continue
-        if stripped.startswith("###") or stripped.startswith("**"):
-            p = doc.add_paragraph()
-            p.paragraph_format.left_indent = Cm(1)
-            apply_inline_formatting(p, stripped.lstrip("#").strip())
-            for run in p.runs:
-                run.font.bold = True
-                run.font.size = Pt(11)
-        elif "|" in stripped and not stripped.startswith("| :---"):
-            # It's a table row inside a blockquote
+        # Skip table separator rows
+        if re.match(r"^\|[-: |]+\|$", stripped):
+            continue
+        if "|" in stripped:
             cells = [c.strip() for c in stripped.strip("|").split("|")]
             p = doc.add_paragraph(" | ".join(cells))
-            p.paragraph_format.left_indent = Cm(1)
-            for run in p.runs:
-                run.font.size = Pt(10)
         else:
             p = doc.add_paragraph()
-            p.paragraph_format.left_indent = Cm(1)
-            apply_inline_formatting(p, stripped)
-            for run in p.runs:
-                run.font.size = Pt(11)
+            apply_inline(p, stripped.lstrip("#").strip())
+        p.paragraph_format.left_indent = Cm(1)
+        for r in p.runs:
+            r.font.size = Pt(11)
 
 
 # ---------------------------------------------------------------------------
@@ -328,97 +275,95 @@ def render_markdown(doc, md_text):
     while i < len(lines):
         line = lines[i]
 
-        # --- Code block ---
+        # Code fence
         if line.strip().startswith("```"):
-            if in_code_block:
-                in_code_block = False
-                i += 1
-                continue
-            else:
-                in_code_block = True
-                i += 1
-                continue
-
+            in_code_block = not in_code_block
+            i += 1
+            continue
         if in_code_block:
             p = doc.add_paragraph(line)
-            for run in p.runs:
-                run.font.name = "Courier New"
-                run.font.size = Pt(9)
+            for r in p.runs:
+                r.font.name = "Courier New"
+                r.font.size = Pt(9)
             i += 1
             continue
 
-        # --- Block quote ---
+        # Blockquote accumulation
         if line.startswith(">"):
             blockquote_lines.append(line)
             in_blockquote = True
             i += 1
             continue
-        elif in_blockquote:
+        if in_blockquote:
             add_blockquote(doc, blockquote_lines)
             blockquote_lines = []
             in_blockquote = False
-            # don't increment — re-process current line
+            # re-process current line (do NOT increment)
 
-        # --- Table ---
+        # Table accumulation
         if line.startswith("|"):
             table_lines.append(line)
             in_table = True
             i += 1
             continue
-        elif in_table:
+        if in_table:
             add_md_table(doc, table_lines)
             table_lines = []
             in_table = False
-            # re-process current line
+            # re-process current line (do NOT increment)
 
-        # --- Heading ---
+        # Heading
         m = re.match(r"^(#{1,4})\s+(.+)$", line)
         if m:
             level = len(m.group(1))
-            text = m.group(2).strip()
-            doc.add_heading(text, level=level)
+            doc.add_heading(m.group(2).strip(), level=level)
             i += 1
             continue
 
-        # --- Image ---
+        # Image
         m = re.match(r"^!\[(.+?)\]\((.+?)\)\s*$", line)
         if m:
             add_image_para(doc, m.group(1), m.group(2))
             i += 1
             continue
 
-        # --- Horizontal rule ---
+        # Horizontal rule
         if re.match(r"^---+$", line.strip()):
             i += 1
             continue
 
-        # --- Numbered list ---
+        # Numbered list
         m = re.match(r"^(\d+)\.\s+(.+)$", line)
         if m:
-            p = doc.add_paragraph(style="List Number")
-            apply_inline_formatting(p, m.group(2))
+            p = doc.add_paragraph(style="List Paragraph")
+            p.paragraph_format.left_indent = Cm(1)
+            num_run = p.add_run(f"{m.group(1)}. ")
+            num_run.bold = False
+            apply_inline(p, m.group(2))
             i += 1
             continue
 
-        # --- Bullet list ---
+        # Bullet list
         m = re.match(r"^[-*]\s+(.+)$", line)
         if m:
-            p = doc.add_paragraph(style="List Bullet")
-            apply_inline_formatting(p, m.group(1))
+            p = doc.add_paragraph(style="List Paragraph")
+            p.paragraph_format.left_indent = Cm(1)
+            bullet_run = p.add_run("• ")
+            apply_inline(p, m.group(1))
             i += 1
             continue
 
-        # --- Blank line ---
+        # Blank line
         if not line.strip():
             i += 1
             continue
 
-        # --- Normal paragraph ---
+        # Normal paragraph
         p = doc.add_paragraph()
-        apply_inline_formatting(p, line.strip())
+        apply_inline(p, line.strip())
         i += 1
 
-    # Flush remaining
+    # Flush
     if in_table:
         add_md_table(doc, table_lines)
     if in_blockquote:
@@ -430,36 +375,33 @@ def render_markdown(doc, md_text):
 # ---------------------------------------------------------------------------
 
 def main():
-    print(f"Reading: {MD_FILE}")
-    md_text = MD_FILE.read_text(encoding="utf-8")
+    print(f"Åpner v8 som stilbase: {V8_FILE}")
+    doc = Document(str(V8_FILE))
 
-    print("Building document...")
-    doc = Document()
+    # Preserve the trailing sectPr (page layout / margins) from v8
+    body = doc.element.body
+    sectPr = body.find(qn("w:sectPr"))
+    sectPr_copy = deepcopy(sectPr) if sectPr is not None else None
 
-    # Page margins
-    for section in doc.sections:
-        section.top_margin = Cm(2.5)
-        section.bottom_margin = Cm(2.5)
-        section.left_margin = Cm(3.0)
-        section.right_margin = Cm(2.5)
+    # Clear ALL existing body content
+    for child in list(body):
+        body.remove(child)
 
-    # Default body font
-    style = doc.styles["Normal"]
-    style.font.name = "Calibri"
-    style.font.size = Pt(12)
+    # Re-attach section properties so page layout is intact
+    if sectPr_copy is not None:
+        body.append(sectPr_copy)
 
-    # Title page
+    print("Bygger tittelside og innholdsfortegnelse...")
     build_title_page(doc)
-
-    # TOC page
     build_toc_page(doc)
 
-    # Main content
+    print(f"Renderer markdown: {MD_FILE}")
+    md_text = MD_FILE.read_text(encoding="utf-8")
     render_markdown(doc, md_text)
 
-    print(f"Saving: {OUT_FILE}")
+    print(f"Lagrer: {OUT_FILE}")
     doc.save(str(OUT_FILE))
-    print("Done.")
+    print("Ferdig.")
 
 
 if __name__ == "__main__":
