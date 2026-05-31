@@ -4,7 +4,9 @@
 
 Norsk lakseoppdrett er en av landets største eksportnæringer, med en eksportverdi som i 2023 oversteg 100 milliarder kroner (SSB, 2024). Eksportprisen for fersk laks svinger kraftig fra uke til uke og er avgjørende for lønnsomheten hos både oppdrettere, eksportører og kjøpere. Aktører med eksponering mot spotmarkedet har behov for pålitelige prognoser på 4–12 ukers sikt for å planlegge slakting, logistikk og prissikring.
 
-Til tross for den kommersielle viktigheten er offentlig tilgjengelig forskning på kortsiktig ukentlig lakseprisprognosering begrenset. FAO publiserer kvartalsvise prisindekser, og SSB rapporterer ukentlig; men koblingen mellom disse kildene og maskinlæringsbaserte prognosemetoder er lite utforsket i litteraturen.
+Tidligere forskning viser at klassiske tidsseriemodeller som SARIMA ofte fungerer godt for kortsiktige prognoser i markeder med stabile sesongmønstre, mens maskinlæringsmodeller kan prestere bedre når tidsseriene inneholder ikke-lineære sammenhenger og strukturelle brudd. Til tross for den kommersielle viktigheten er offentlig tilgjengelig forskning på kortsiktig ukentlig lakseprisprognosering begrenset. Særlig finnes det få studier som kombinerer klassiske statistiske metoder med moderne gradientøkende tremodeller for dette spesifikke formålet.
+
+Denne studien søker å fylle dette kunnskapshullet ved å integrere SSBs ukentlige statistikk med valutakurser og internasjonale prisindekser (FAO) i et felles prediksjonsrammeverk. Ved å sammenligne modellene på identiske data gjennom en krevende walk-forward-evaluering, bidrar studien til økt forståelse for hvilke arkitekturer som er mest robuste for ulike tidshorisonter i et volatilt råvaremarked.
 
 ## 1.2 Problemstilling
 
@@ -15,13 +17,13 @@ Rapporten besvarer følgende spørsmål:
 Som underspørsmål undersøkes:
 
 1. Er statistiske tidsseriemodeller (SARIMA/SARIMAX) bedre enn gradientøkende tremodeller på korte horisonter?
-2. Gir kombinasjon av EUR/USD-valutakurs som eksogen variabel (SARIMAX) bedre prediksjoner enn SARIMA alene?
+2. Gir inkludering av valutakurs (EUR/NOK, USD/NOK) som eksogen variabel (SARIMAX) bedre prediksjoner enn SARIMA alene?
 3. Hvor godt kalibrerte er modellenes konfidensintervaller?
 4. Hvilke features er viktigst i de maskinlæringsbaserte modellene?
 
 ## 1.3 Avgrensning
 
-Studien dekker ukentlige data fra 2009 til 2024 og evaluerer modellene på de siste 104 ukene (~2 år) i en walk-forward-oppsett uten fremtidig informasjonslekasje. Det er ikke gjort markedsanalyse eller optimert handlingsstrategi — fokus er utelukkende på statistisk prognose.
+Studien dekker ukentlige data fra 2010 til 2026 og evaluerer modellene på de siste 104 ukene (~2 år) i en walk-forward-oppsett uten fremtidig informasjonslekasje. Det er ikke gjort markedsanalyse eller optimert handlingsstrategi — fokus er utelukkende på statistisk prognose.
 
 Rapporten inngår som avsluttende prosjektarbeid i emnet LOG650 (Logistikk og kunstig intelligens) ved Høgskolen i Molde (HiM).
 
@@ -38,6 +40,12 @@ Box, Jenkins, Reinsel og Ljung (2015) er standardverket for SARIMA-modellering o
 ### Gradientøkende tremodeller og ensemble-metoder for tidsserier
 
 Chen og Guestrin (2016) introduserte XGBoost, og Ke et al. (2017) introduserte LightGBM, begge med dokumentert overlegen ytelse på tabelldata sammenlignet med dypere nevrale nett ved moderate datasettsstørrelser. For tidsserieprognose spesifikt fant Makridakis, Spiliotis og Assimakopoulos (2020) i den store M4-konkurransen (100 000 tidsserier, 61 metoder) at kombinasjonsmodeller konsekvent overgår enkeltmodeller, og at hybridmodeller som kombinerer statistiske og maskinlæringsbaserte metoder hevder seg blant de beste. Dette er en direkte motivasjon for ensemble-tilnærmingen i denne studien.
+
+Et viktig funn i M4-konkurransen er imidlertid at rene maskinlæringsmodeller (uten statistisk komponent) gjennomgående underpresterte relativt til statistiske og hybride metoder, særlig på korte horisonter. Spiliotis, Makridakis og Assimakopoulos (2020) bekrefter dette i en oppfølgingsstudie og peker på at ML-modeller er spesielt sårbare for overfitting på moderate datamengder — en sentral begrensning som er direkte relevant for dette studiet med ~740 treningsobservasjoner. Denne innsikten setter forventninger om at SARIMA bør konkurrere sterkt på korte horisonter (h = 4), noe som bekreftes av resultatene.
+
+### Valutakursprognose og random-walk-hypotesen
+
+Meese og Rogoff (1983) dokumenterte at enkle random-walk-modeller for valutakurser er vanskelige å slå med strukturelle modeller, selv når fremtidige fundamentalverdier er kjent. Dette motiverer bruken av naiv (random walk) valutakursprognose som standardreferanse i SARIMAX-evalueringen, og gjør det mulig å skille mellom valutakursens *informasjonsinnhold* for lakseprisprognose og den praktiske gevinsten i operativt bruk.
 
 ### Forskningsgap
 
