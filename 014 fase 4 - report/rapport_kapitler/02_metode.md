@@ -13,6 +13,27 @@ Ukentlig gjennomsnittlig eksportpris for fersk hel norsk laks (NOK/kg) er hentet
 | Norges Bank | EUR/USD spot | Daglig | Ukentlig gjennomsnitt |
 | FAO | Fiskeriprisindeks (akvakultur) | Kvartalsvis | Forward-fill til ukentlig; `fao_imputert`-flagg markerer imputerte verdier |
 
+### Tidsseriekarakteristika og deskriptiv statistikk
+
+Tabell 2.1 oppsummerer de viktigste statistiske egenskapene til eksportprisserien over hele analyseperioden (n = 743 ukentlige observasjoner, 2010–2024).
+
+**Tabell 2.1 – Deskriptiv statistikk for eksportpris (NOK/kg)**
+
+| Statistikk | Verdi |
+|---|---:|
+| Gjennomsnitt | 55,1 NOK/kg |
+| Median | 53,9 NOK/kg |
+| Standardavvik | 20,5 NOK/kg |
+| Minimum | 21,6 NOK/kg (uke 43, 2011) |
+| Maksimum | 122,9 NOK/kg (uke 11, 2023) |
+| Ukentlig prisendring, std | 2,93 NOK/kg |
+
+Variasjonskoeffisienten (~37 %) bekrefter at lakseprisen er svært volatil sammenlignet med de fleste industrielle råvarer. Ukentlige enkeltbevegelser på ±12 NOK/kg er observert.
+
+**Sesongmønster:** Gjennomsnittsprisen varierer systematisk gjennom året: Q1 og Q2 (vinter/vår) er høyest (~59 og 58 NOK/kg), mens Q3 (sommer) er lavest (~51 NOK/kg). Dette reflekterer biologisk sesong i oppdrettssyklusen og lavere etterspørsel i sommermånedene. Mønsteret er stabilt over hele perioden, men overlagres av kraftige regimeskift — særlig prisoppgangen 2022–2023 der prisen steg fra ~70 NOK/kg til over 120 NOK/kg på under to år.
+
+**Stasjonaritet:** ADF- og KPSS-tester (se seksjon 2.3.2) bekrefter at serien er I(1): ikke-stasjonær på nivå, men stasjonær etter én differensiering. Dette motiverer bruken av d = 1 i SARIMA-modellen og bruken av lagverdier (i stedet for prisnivå) som features i ML-modellene.
+
 ### Feature-engineering
 
 Følgende feature-grupper ble konstruert fra prisvariabelen og eksogene variabler (44 kolonner totalt):

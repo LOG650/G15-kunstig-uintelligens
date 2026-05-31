@@ -23,8 +23,8 @@ Tabell 3.1 viser MAE og MAPE for alle modeller på testperioden (104 uker). Best
 **Viktige observasjoner:**
 
 - Alle de tre toppmodellene (SARIMA, SARIMAX, Ensemble) slår naiv referansen på samtlige horisonter.
-- SARIMA og ensemblet er statistisk likt på h = 4 (8,27 vs. 8,33 NOK/kg, differanse 0,06 NOK/kg).
-- Ensemblet vinner h = 8 med kun 0,03 NOK/kg over XGBoost+ES — marginalt, men konsistent.
+- SARIMA og ensemblet er numerisk svært like på h = 4 (8,27 vs. 8,33 NOK/kg, differanse 0,06 NOK/kg); hvorvidt denne forskjellen er statistisk signifikant er ikke testet (krever f.eks. Diebold-Mariano-test).
+- Ensemblet er numerisk best på h = 8 med 0,03 NOK/kg over XGBoost+ES — marginalt og uten formell signifikanstest.
 - På h = 12 dominerer SARIMAX med 12,93 NOK/kg mot LightGBM tunet (13,06) og LightGBM+ES (13,24). Ensemble-averaging skader her fordi XGBoost+ES er svakere (15,31).
 - XGBoost-tuning alene (uten early stopping) er svakere enn naiv på h = 4 og h = 8 — hyperparameter-tuning uten regularisering overfitter.
 

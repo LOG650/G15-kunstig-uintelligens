@@ -77,6 +77,27 @@ Ukentlig gjennomsnittlig eksportpris for fersk hel norsk laks (NOK/kg) er hentet
 | Norges Bank | EUR/USD spot | Daglig | Ukentlig gjennomsnitt |
 | FAO | Fiskeriprisindeks (akvakultur) | Kvartalsvis | Forward-fill til ukentlig; `fao_imputert`-flagg markerer imputerte verdier |
 
+### Tidsseriekarakteristika og deskriptiv statistikk
+
+Tabell 2.1 oppsummerer de viktigste statistiske egenskapene til eksportprisserien over hele analyseperioden (n = 743 ukentlige observasjoner, 2010–2024).
+
+**Tabell 2.1 – Deskriptiv statistikk for eksportpris (NOK/kg)**
+
+| Statistikk | Verdi |
+|---|---:|
+| Gjennomsnitt | 55,1 NOK/kg |
+| Median | 53,9 NOK/kg |
+| Standardavvik | 20,5 NOK/kg |
+| Minimum | 21,6 NOK/kg (uke 43, 2011) |
+| Maksimum | 122,9 NOK/kg (uke 11, 2023) |
+| Ukentlig prisendring, std | 2,93 NOK/kg |
+
+Variasjonskoeffisienten (~37 %) bekrefter at lakseprisen er svært volatil sammenlignet med de fleste industrielle råvarer. Ukentlige enkeltbevegelser på ±12 NOK/kg er observert.
+
+**Sesongmønster:** Gjennomsnittsprisen varierer systematisk gjennom året: Q1 og Q2 (vinter/vår) er høyest (~59 og 58 NOK/kg), mens Q3 (sommer) er lavest (~51 NOK/kg). Dette reflekterer biologisk sesong i oppdrettssyklusen og lavere etterspørsel i sommermånedene. Mønsteret er stabilt over hele perioden, men overlagres av kraftige regimeskift — særlig prisoppgangen 2022–2023 der prisen steg fra ~70 NOK/kg til over 120 NOK/kg på under to år.
+
+**Stasjonaritet:** ADF- og KPSS-tester (se seksjon 2.3.2) bekrefter at serien er I(1): ikke-stasjonær på nivå, men stasjonær etter én differensiering. Dette motiverer bruken av d = 1 i SARIMA-modellen og bruken av lagverdier (i stedet for prisnivå) som features i ML-modellene.
+
 ### Feature-engineering
 
 Følgende feature-grupper ble konstruert fra prisvariabelen og eksogene variabler (44 kolonner totalt):
@@ -189,8 +210,8 @@ Tabell 3.1 viser MAE og MAPE for alle modeller på testperioden (104 uker). Best
 **Viktige observasjoner:**
 
 - Alle de tre toppmodellene (SARIMA, SARIMAX, Ensemble) slår naiv referansen på samtlige horisonter.
-- SARIMA og ensemblet er statistisk likt på h = 4 (8,27 vs. 8,33 NOK/kg, differanse 0,06 NOK/kg).
-- Ensemblet vinner h = 8 med kun 0,03 NOK/kg over XGBoost+ES — marginalt, men konsistent.
+- SARIMA og ensemblet er numerisk svært like på h = 4 (8,27 vs. 8,33 NOK/kg, differanse 0,06 NOK/kg); hvorvidt denne forskjellen er statistisk signifikant er ikke testet (krever f.eks. Diebold-Mariano-test).
+- Ensemblet er numerisk best på h = 8 med 0,03 NOK/kg over XGBoost+ES — marginalt og uten formell signifikanstest.
 - På h = 12 dominerer SARIMAX med 12,93 NOK/kg mot LightGBM tunet (13,06) og LightGBM+ES (13,24). Ensemble-averaging skader her fordi XGBoost+ES er svakere (15,31).
 - XGBoost-tuning alene (uten early stopping) er svakere enn naiv på h = 4 og h = 8 — hyperparameter-tuning uten regularisering overfitter.
 
@@ -365,7 +386,9 @@ Denne studien har undersøkt hvilke modeller som gir lavest prediksjonsfeil for 
 
 ## 5.2 Praktiske implikasjoner
 
-Studien viser at en kombinert modellstrategi — hvor man bytter modell basert på horisont — gir det mest robuste prognosesystemet. For sjømatnæringen innebærer dette at man kan oppnå en forbedring på inntil 3 % i MAPE sammenlignet med naive estimater. Dette gir bedre beslutningsstøtte for slakteplanlegging, risikostyring og prissikring. 
+Studien viser at en kombinert modellstrategi — hvor man bytter modell basert på horisont — gir det mest robuste prognosesystemet. For sjømatnæringen innebærer dette at man kan oppnå en forbedring på inntil 3 % i MAPE sammenlignet med naive estimater. Dette gir bedre beslutningsstøtte for slakteplanlegging, risikostyring og prissikring.
+
+**Operasjonell anbefaling per horisont:** SARIMA for h = 4 (MAE 8,27 NOK/kg), Ensemble med 50/50 vekting for h = 8 (MAE 10,85 NOK/kg), og SARIMAX for h = 12 (MAE 12,93 NOK/kg). Merk at post-hoc optimal vekting for h = 8 (w_XGB = 0,8, MAE 10,77 NOK/kg) er funnet ved grid search over det *kjente* testsettet og ikke kan benyttes direkte i drift uten å fastsette vektene på en separat valideringsperiode.
 
 Det må imidlertid understrekes at alle modeller underestimerer usikkerheten i perioder med store regimeskift, slik som prishoppet i 2022–2023. Operative brukere bør derfor tolke konfidensintervallene som veiledende og ta høyde for at ekstreme utfall forekommer oftere enn modellene forutser.
 

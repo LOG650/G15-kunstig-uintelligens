@@ -20,15 +20,21 @@
 
 ## 5.3 Anbefalinger
 
-For operativt bruk anbefales en horisontstyrt modellstrategi:
+For operativt bruk anbefales en horisontstyrt modellstrategi. Tabellen under skiller mellom den beste *analytisk observerte* ytelsen og en *forsiktig operasjonell* anbefaling:
 
-| Horisont | Anbefalt modell | MAE (testperiode) |
-|---|---|---:|
-| h = 4 uker | SARIMA(1,1,1)(1,1,1)₅₂, rullende | 8,27 NOK/kg |
-| h = 8 uker | Ensemble (XGB+ES + LGBM+ES, w=0,8 XGB) | 10,77 NOK/kg* |
-| h = 12 uker | SARIMAX(1,1,1)(1,1,1)₅₂ + EUR/USD | 12,93 NOK/kg |
+| Horisont | Anbefalt modell (operasjonelt) | MAE | Merk |
+|---|---|---:|---|
+| h = 4 uker | SARIMA(1,1,1)(1,1,1)₅₂, rullende | 8,27 NOK/kg | — |
+| h = 8 uker | Ensemble (XGB+ES + LGBM+ES, lik 50/50 vekting) | 10,85 NOK/kg | Se note |
+| h = 12 uker | SARIMAX(1,1,1)(1,1,1)₅₂ + EUR/USD | 12,93 NOK/kg | — |
 
-*Med post-hoc optimal vekting.
+**Note h = 8:** Post-hoc grid search over testsettet gir optimal vekting w_XGB = 0,8 (MAE 10,77 NOK/kg), men disse vektene er tilpasset det *kjente* testsettet og er ikke direkte overførbare til fremtidig drift. En operasjonell implementering bør fastlegge vekter på en separat valideringsperiode som holdes utenfor den endelige evalueringen. Lik 50/50-vekting (10,85 NOK/kg) er den robuste anbefalingen.
+
+**Logistikkimplikasjoner:** Et prognosesystem basert på disse modellene har konkrete anvendelser langs laksens verdikjede:
+
+- **Slakteplanlegging (h = 4 uker):** En MAE på 8,27 NOK/kg (~9,5 % MAPE) gir tilstrekkelig presisjon til å time slaktevolumer mot forventet prisutvikling. Oppdrettere kan bruke h=4-prognosen til å avgjøre om det lønner seg å forskyve slakting 1–2 uker.
+- **Kontraktsinngåelse og prissikring (h = 8–12 uker):** På h=8–12 er feilmarginen 11–13 NOK/kg (~13–16 % MAPE). Dette er for upresist til å styre enkeltkontrakter, men nyttig for å vurdere om spotpriseksponering bør reduseres via terminkontrakter (Fish Pool).
+- **Kapasitetsplanlegging i logistikk (h = 12 uker):** Prognose for 12 uker kan brukes av transportører og pakketerier til kapasitetsreservasjon: høy forventet pris signaliserer høy etterspørsel og behov for ekstra kjølekapasitet.
 
 **Forbehold for praktisk bruk:** Alle tall er fra en historisk testperiode (2022–2024) som inkluderer en uvanlig prisopphøyingsperiode. Modellenes ytelse i mer normale markeder kan avvike. Konfidensintervallene skal tolkes med varsomhet — de dekker statistisk sett ~80 % av utfallene, ikke 95 %.
 
