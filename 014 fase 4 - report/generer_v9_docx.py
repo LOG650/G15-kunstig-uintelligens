@@ -241,22 +241,45 @@ def add_image_para(doc, alt_text, img_path):
 # ---------------------------------------------------------------------------
 
 def add_blockquote(doc, lines):
+    """Render blockquote content. If it contains a table, render it as a proper Word table."""
+    table_lines = []
+    in_table = False
+    
     for line in lines:
         stripped = line.lstrip("> ").strip()
+        
+        # Table detection
+        if stripped.startswith("|"):
+            table_lines.append(stripped)
+            in_table = True
+            continue
+        
+        # If we were in a table and current line is NOT a table line, flush the table
+        if in_table and not stripped.startswith("|"):
+            add_md_table(doc, table_lines)
+            table_lines = []
+            in_table = False
+        
         if not stripped:
             continue
-        # Skip table separator rows
-        if re.match(r"^\|[-: |]+\|$", stripped):
-            continue
-        if "|" in stripped:
-            cells = [c.strip() for c in stripped.strip("|").split("|")]
-            p = doc.add_paragraph(" | ".join(cells))
-        else:
-            p = doc.add_paragraph()
-            apply_inline(p, stripped.lstrip("#").strip())
+            
+        # Normal blockquote text (or heading)
+        p = doc.add_paragraph()
         p.paragraph_format.left_indent = Cm(1)
-        for r in p.runs:
-            r.font.size = Pt(11)
+        
+        if stripped.startswith("#"):
+            # Sub-heading inside blockquote
+            run = p.add_run(stripped.lstrip("#").strip())
+            run.bold = True
+            run.font.size = Pt(12)
+        else:
+            apply_inline(p, stripped)
+            for r in p.runs:
+                r.font.size = Pt(11)
+                
+    # Final flush for table if it ended the blockquote
+    if in_table:
+        add_md_table(doc, table_lines)
 
 
 # ---------------------------------------------------------------------------
